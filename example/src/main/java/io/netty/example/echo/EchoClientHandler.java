@@ -16,9 +16,12 @@
 package io.netty.example.echo;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+
+import java.nio.charset.Charset;
 
 /**
  * Handler implementation for the echo client.  It initiates the ping-pong
@@ -35,6 +38,7 @@ public class EchoClientHandler extends ChannelInboundHandlerAdapter {
     public EchoClientHandler() {
         firstMessage = Unpooled.buffer(EchoClient.SIZE);
         for (int i = 0; i < firstMessage.capacity(); i ++) {
+            System.out.println("write msg : " + (byte)i);
             firstMessage.writeByte((byte) i);
         }
     }
@@ -46,6 +50,13 @@ public class EchoClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) {
+        ByteBuf msg1 = (ByteBuf) msg;
+        int length = msg1.readableBytes();
+        System.out.println("length : "+ length);
+        for (int i = 0; i < length; i++) {
+            System.out.print("client receive : " + msg1.readByte());
+        }
+        System.out.println();
         ctx.write(msg);
     }
 
