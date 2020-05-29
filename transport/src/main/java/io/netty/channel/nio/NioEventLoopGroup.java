@@ -48,6 +48,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
      * Create a new instance using the specified number of threads, {@link ThreadFactory} and the
      * {@link SelectorProvider} which is returned by {@link SelectorProvider#provider()}.
      */
+    // 开始创建
     public NioEventLoopGroup(int nThreads) {
         this(nThreads, (Executor) null);
     }
@@ -67,7 +68,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
     public NioEventLoopGroup(int nThreads, ThreadFactory threadFactory) {
         this(nThreads, threadFactory, SelectorProvider.provider());
     }
-
+    // 多了一个参数 SelectorProvider.provider
     public NioEventLoopGroup(int nThreads, Executor executor) {
         this(nThreads, executor, SelectorProvider.provider());
     }
@@ -90,7 +91,8 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
             int nThreads, Executor executor, final SelectorProvider selectorProvider) {
         this(nThreads, executor, selectorProvider, DefaultSelectStrategyFactory.INSTANCE);
     }
-
+    // 到此开始从父类开始进行实例化操作
+    // RejectedExecutionHandlers.reject() 拒绝策略,直接抛出 exception
     public NioEventLoopGroup(int nThreads, Executor executor, final SelectorProvider selectorProvider,
                              final SelectStrategyFactory selectStrategyFactory) {
         super(nThreads, executor, selectorProvider, selectStrategyFactory, RejectedExecutionHandlers.reject());

@@ -36,7 +36,11 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
 
     private static final int DEFAULT_EVENT_LOOP_THREADS;
 
+    /**
+     * 可以看到默认的线程数量是在静态代码中初始化的
+     */
     static {
+        // 选择io.netty.eventLoopThreads属性值和 可用cpu数*2 之间选择一个大的
         DEFAULT_EVENT_LOOP_THREADS = Math.max(1, SystemPropertyUtil.getInt(
                 "io.netty.eventLoopThreads", NettyRuntime.availableProcessors() * 2));
 
@@ -48,6 +52,9 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     /**
      * @see MultithreadEventExecutorGroup#MultithreadEventExecutorGroup(int, Executor, Object...)
      */
+    // 当传递的nThreads为0时, 那么就使用默认的 DEFAULT_EVENT_LOOP_THREADS
+    // 看一下默认的线程个数如何确定?
+    // 接着从父类实例化
     protected MultithreadEventLoopGroup(int nThreads, Executor executor, Object... args) {
         super(nThreads == 0 ? DEFAULT_EVENT_LOOP_THREADS : nThreads, executor, args);
     }
@@ -81,6 +88,8 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
     @Override
     protected abstract EventLoop newChild(Executor executor, Object... args) throws Exception;
 
+    // MultithreadEventLoopGroup下后多个NioEventLoop,此处的next()实现选择一个 NioEventLoop来进行注册
+    // 故后面的 register是NioEventLoop的父类 SingleThreadEventLoop的操作
     @Override
     public ChannelFuture register(Channel channel) {
         return next().register(channel);

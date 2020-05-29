@@ -242,6 +242,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     /**
      * Create a new {@link Channel} and bind it.
      */
+    // 进行地址的绑定
     public ChannelFuture bind(int inetPort) {
         return bind(new InetSocketAddress(inetPort));
     }
@@ -263,23 +264,27 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     /**
      * Create a new {@link Channel} and bind it.
      */
+    // 先坐下校验, 在执行端口绑定的操作
     public ChannelFuture bind(SocketAddress localAddress) {
+        // 主要对 group  channelFactory两个参数进行了判空操作
         validate();
         return doBind(ObjectUtil.checkNotNull(localAddress, "localAddress"));
     }
-
+    // 端口绑定
     private ChannelFuture doBind(final SocketAddress localAddress) {
+        //
         final ChannelFuture regFuture = initAndRegister();
         final Channel channel = regFuture.channel();
         if (regFuture.cause() != null) {
             return regFuture;
         }
-
+        // regFuture此已经操作玩车, 则直接调用doBind0 进行绑定
         if (regFuture.isDone()) {
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
             doBind0(regFuture, channel, localAddress, promise);
             return promise;
+        // 如果没有操作完成,则注册一个listener,在完成后调用 doBind0 进行绑定
         } else {
             // Registration future is almost always fulfilled already, but just in case it's not.
             final PendingRegistrationPromise promise = new PendingRegistrationPromise(channel);
@@ -307,7 +312,9 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     final ChannelFuture initAndRegister() {
         Channel channel = null;
         try {
+            // 此处其实就是通过反射, 创建一个通过 channel 执行的class的 实例
             channel = channelFactory.newChannel();
+            // 对创建的channel 进行初始化
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
@@ -319,7 +326,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             // as the Channel is not registered yet we need to force the usage of the GlobalEventExecutor
             return new DefaultChannelPromise(new FailedChannel(), GlobalEventExecutor.INSTANCE).setFailure(t);
         }
-
+        // 此时看的是Server端,故此时是吧 NioServerSocketChannel注册到 group
+        // 看一下这个注册动作
         ChannelFuture regFuture = config().group().register(channel);
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {

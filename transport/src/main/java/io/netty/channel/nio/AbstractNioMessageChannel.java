@@ -72,6 +72,8 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
             try {
                 try {
                     do {
+                        // 读取连接的的NioSocketChannel
+                        // 并放到readBuf 这个list中
                         int localRead = doReadMessages(readBuf);
                         if (localRead == 0) {
                             break;
@@ -88,6 +90,9 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                 }
 
                 int size = readBuf.size();
+                // 遍历读取到的 NioSocketChannel, 并把其放入到pipeline的下一个进行操作
+                // 此处的下一个pipeline handler应该是 Acceptor那个handler, 此handler就会把
+                // 接收到的socketChannel注册到childGroup中.
                 for (int i = 0; i < size; i ++) {
                     readPending = false;
                     pipeline.fireChannelRead(readBuf.get(i));

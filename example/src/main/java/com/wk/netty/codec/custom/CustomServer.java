@@ -10,6 +10,7 @@ import io.netty.handler.logging.LoggingHandler;
 public class CustomServer {
 
     public static void main(String[] args) {
+        // 以此为入口, 看创建的这两个NioEventLoopGroup做了什么工作呢?
         NioEventLoopGroup parent = new NioEventLoopGroup(1);
         NioEventLoopGroup child = new NioEventLoopGroup();
         try{

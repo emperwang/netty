@@ -127,11 +127,14 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         return this;
     }
 
+    // 对创建好的channel进行初始化
     @Override
     void init(Channel channel) {
+        // 设置channelOption值
         setChannelOptions(channel, newOptionsArray(), logger);
+        // 设置attribute值
         setAttributes(channel, attrs0().entrySet().toArray(EMPTY_ATTRIBUTE_ARRAY));
-
+        // 得到此channel对应的pipeline
         ChannelPipeline p = channel.pipeline();
 
         final EventLoopGroup currentChildGroup = childGroup;
@@ -150,7 +153,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 if (handler != null) {
                     pipeline.addLast(handler);
                 }
-
+                // 在pipeline中创建 ServerBootstrapAcceptor 处理器,用来处理channel接入事件
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
@@ -204,6 +207,11 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             };
         }
 
+
+        /**
+         * 可以看到此 此handler的读取事件,其实读取的就是channel, 读取之后
+         * 把此channel注册到 childGroup中; 之后的读写事件就由childGroup来进行处理了.
+         */
         @Override
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
