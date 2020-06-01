@@ -122,6 +122,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             }
             allocHandle.readComplete();
             pipeline.fireChannelReadComplete();
+            // 异常处理事件
             pipeline.fireExceptionCaught(cause);
             if (close || cause instanceof IOException) {
                 closeOnRead(pipeline);
@@ -145,9 +146,11 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             try {
                 do {
                     byteBuf = allocHandle.allocate(allocator);
+                    // doReadBytes 真实读取数据
                     allocHandle.lastBytesRead(doReadBytes(byteBuf));
                     if (allocHandle.lastBytesRead() <= 0) {
                         // nothing was read. release the buffer.
+                        // 如果没有读取到数据呢  就释放buffer  并推出循环
                         byteBuf.release();
                         byteBuf = null;
                         close = allocHandle.lastBytesRead() < 0;
@@ -157,13 +160,14 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                         }
                         break;
                     }
-
+                    // 增加信息读取的次数
                     allocHandle.incMessagesRead(1);
                     readPending = false;
+                    // 执行pipeline中 channelRead事件, 来对buf中的数据进行处理
                     pipeline.fireChannelRead(byteBuf);
                     byteBuf = null;
                 } while (allocHandle.continueReading());
-
+                // 读取完成  readComplete 事件
                 allocHandle.readComplete();
                 pipeline.fireChannelReadComplete();
 
@@ -171,6 +175,8 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     closeOnRead(pipeline);
                 }
             } catch (Throwable t) {
+                // 1.如果buf中仍然有数据,则对数据继续进行处理
+                // 2.对异常进行处理
                 handleReadException(pipeline, byteBuf, t, close, allocHandle);
             } finally {
                 // Check if there is a readPending which was not processed yet.

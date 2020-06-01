@@ -567,6 +567,7 @@ public class UnpooledDirectByteBuf extends AbstractReferenceCountedByteBuf {
         ByteBuffer tmpBuf = internalNioBuffer();
         tmpBuf.clear().position(index).limit(index + length);
         try {
+            // 从socket中读取数据到buffer中
             return in.read(tmpBuf);
         } catch (ClosedChannelException ignored) {
             return -1;
