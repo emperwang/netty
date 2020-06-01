@@ -41,7 +41,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
     protected AbstractNioMessageChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         super(parent, ch, readInterestOp);
     }
-
+    // 创建NioServerSocketChannel的 unsafe操作
     @Override
     protected AbstractNioUnsafe newUnsafe() {
         return new NioMessageUnsafe();
@@ -64,6 +64,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
             assert eventLoop().inEventLoop();
             final ChannelConfig config = config();
             final ChannelPipeline pipeline = pipeline();
+            // 在DefaultChannelConfig中创建了recvBuffer的分配器
             final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
             allocHandle.reset(config);
 
@@ -103,7 +104,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
 
                 if (exception != null) {
                     closed = closeOnReadError(exception);
-
+                    // 异常处理
                     pipeline.fireExceptionCaught(exception);
                 }
 

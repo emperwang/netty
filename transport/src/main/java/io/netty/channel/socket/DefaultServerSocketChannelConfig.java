@@ -46,6 +46,7 @@ public class DefaultServerSocketChannelConfig extends DefaultChannelConfig
     /**
      * Creates a new instance.
      */
+    // 在DefaultChannelConfig中创建了recvBuffer的分配器
     public DefaultServerSocketChannelConfig(ServerSocketChannel channel, ServerSocket javaSocket) {
         super(channel);
         this.javaSocket = ObjectUtil.checkNotNull(javaSocket, "javaSocket");

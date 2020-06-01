@@ -72,6 +72,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         this.parent = parent;
         id = newId();
         // buffer的操作函数实例
+        // 此处是AbstractNioMessageChannel类
         unsafe = newUnsafe();
         // 为socketChannel创建pipeline
         pipeline = newChannelPipeline();
@@ -244,7 +245,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         pipeline.flush();
         return this;
     }
-
+    // 端口绑定
     @Override
     public ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
         return pipeline.bind(localAddress, promise);
@@ -519,6 +520,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 if (isActive()) {
                     if (firstRegistration) {
                         // 回调 channelActive函数
+                        // 真实的绑定操作
                         pipeline.fireChannelActive();
                     } else if (config().isAutoRead()) {
                         // This channel was registered before and autoRead() is set. This means we need to begin read
@@ -560,6 +562,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             boolean wasActive = isActive();
             try {
+                // 绑定操作 jdk的nio操作
                 doBind(localAddress);
             } catch (Throwable t) {
                 safeSetFailure(promise, t);
@@ -571,6 +574,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 invokeLater(new Runnable() {
                     @Override
                     public void run() {
+                        // 调用pipeline中的 channelActive
                         pipeline.fireChannelActive();
                     }
                 });

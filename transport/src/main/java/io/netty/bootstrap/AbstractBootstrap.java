@@ -282,6 +282,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         if (regFuture.isDone()) {
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
+            // 注册相应的成功监听器 以及 如果失败设置失败的标志
             doBind0(regFuture, channel, localAddress, promise);
             return promise;
         // 如果没有操作完成,则注册一个listener,在完成后调用 doBind0 进行绑定
@@ -363,6 +364,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             @Override
             public void run() {
                 if (regFuture.isSuccess()) {
+                    // 注册到selector成功了, 则进行端口的绑定
                     channel.bind(localAddress, promise).addListener(ChannelFutureListener.CLOSE_ON_FAILURE);
                 } else {
                     promise.setFailure(regFuture.cause());
