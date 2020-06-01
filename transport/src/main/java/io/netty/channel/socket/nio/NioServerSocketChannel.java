@@ -59,6 +59,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
              *
              *  See <a href="https://github.com/netty/netty/issues/2308">#2308</a>.
              */
+            // 创建selector
             return provider.openServerSocketChannel();
         } catch (IOException e) {
             throw new ChannelException(
@@ -71,7 +72,10 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     /**
      * Create a new instance
      */
+    // NioServerSocetChannel的构造函数
+    // 调用了newSocket
     public NioServerSocketChannel() {
+        // newSocket创建了ServerSocketChannelImpl
         this(newSocket(DEFAULT_SELECTOR_PROVIDER));
     }
 
@@ -85,6 +89,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     /**
      * Create a new instance using the given {@link ServerSocketChannel}.
      */
+    // 看到此处创建的ServerSocketChannelImpl  感兴趣的事件是 accept
     public NioServerSocketChannel(ServerSocketChannel channel) {
         super(null, channel, SelectionKey.OP_ACCEPT);
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());

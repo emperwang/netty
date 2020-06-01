@@ -84,6 +84,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         for (int i = 0; i < nThreads; i ++) {
             boolean success = false;
             try {
+                // 此处的线程池为ThreadPerTaskExecutor, 当执行任务时, 是通过创建一个线程来执行任务
                 children[i] = newChild(executor, args);
                 success = true;
             } catch (Exception e) {
@@ -111,7 +112,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
                 }
             }
         }
-
+        // 对child创建选择器
         chooser = chooserFactory.newChooser(children);
 
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {

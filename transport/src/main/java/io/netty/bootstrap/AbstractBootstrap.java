@@ -313,6 +313,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         Channel channel = null;
         try {
             // 此处其实就是通过反射, 创建一个通过 channel 执行的class的 实例
+            // 此时看的是server端的绑定,故此应该看一下 NioServerSocketChannel的构造器
             channel = channelFactory.newChannel();
             // 对创建的channel 进行初始化
             init(channel);
@@ -329,6 +330,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         // 此时看的是Server端,故此时是吧 NioServerSocketChannel注册到 group
         // 看一下这个注册动作
         ChannelFuture regFuture = config().group().register(channel);
+        // 如果注册的过程中有什么异常, 那么就执行关闭操作
         if (regFuture.cause() != null) {
             if (channel.isRegistered()) {
                 channel.close();

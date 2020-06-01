@@ -98,7 +98,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         }
         throw new IllegalStateException("complete already: " + this);
     }
-
+    // 使用cas方式来修改promise的状态
     @Override
     public boolean trySuccess(V result) {
         return setSuccess0(result);
@@ -608,6 +608,9 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         return setValue0(new CauseHolder(checkNotNull(cause, "cause")));
     }
 
+    /**
+     * cas 来修改此 DefaultPromise的状态
+     */
     private boolean setValue0(Object objResult) {
         if (RESULT_UPDATER.compareAndSet(this, null, objResult) ||
             RESULT_UPDATER.compareAndSet(this, UNCANCELLABLE, objResult)) {

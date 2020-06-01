@@ -78,7 +78,7 @@ public class DefaultChannelPromise extends DefaultPromise<Void> implements Chann
         super.setSuccess(result);
         return this;
     }
-
+    // cas来修改状态
     @Override
     public boolean trySuccess() {
         return trySuccess(null);

@@ -141,9 +141,16 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
         }
     }
 
+    /**
+     * 创建NioEventLoop
+     */
     @Override
     protected EventLoop newChild(Executor executor, Object... args) throws Exception {
+        // queueFactory为null
         EventLoopTaskQueueFactory queueFactory = args.length == 4 ? (EventLoopTaskQueueFactory) args[3] : null;
+        // args[0]为selector
+        // args[1]为selectStrategy
+        // args[2]为拒绝策略
         return new NioEventLoop(this, executor, (SelectorProvider) args[0],
             ((SelectStrategyFactory) args[1]).newSelectStrategy(), (RejectedExecutionHandler) args[2], queueFactory);
     }
