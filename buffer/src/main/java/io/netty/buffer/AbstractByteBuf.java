@@ -279,6 +279,8 @@ public abstract class AbstractByteBuf extends ByteBuf {
 
     @Override
     public ByteBuf ensureWritable(int minWritableBytes) {
+        // checkPositiveOrZero检测参数的正确性
+        // ensureWritable0 对byteBuf进行扩容操作
         ensureWritable0(checkPositiveOrZero(minWritableBytes, "minWritableBytes"));
         return this;
     }
@@ -296,7 +298,8 @@ public abstract class AbstractByteBuf extends ByteBuf {
                     "writerIndex(%d) + minWritableBytes(%d) exceeds maxCapacity(%d): %s",
                     writerIndex, minWritableBytes, maxCapacity, this));
         }
-
+        // 根据参数计算新的大小
+        // 并进行合适的扩容操作
         // Normalize the target capacity to the power of 2.
         final int fastWritable = maxFastWritableBytes();
         int newCapacity = fastWritable >= minWritableBytes ? writerIndex + fastWritable
@@ -1129,9 +1132,13 @@ public abstract class AbstractByteBuf extends ByteBuf {
 
     @Override
     public int writeBytes(ScatteringByteChannel in, int length) throws IOException {
+        // 1. 判断length的有效性
+        // 2. 对byteBuf进行扩容
         ensureWritable(length);
         // setBytes 读取数据
+        // 1. 调用 in来进行读取数据到buf中, 其中buf有 directBuf 和 heapBuf; 也就是对外内存和 堆内存
         int writtenBytes = setBytes(writerIndex, in, length);
+        // 读取完数据后  更新 writerIndex的位置
         if (writtenBytes > 0) {
             writerIndex += writtenBytes;
         }

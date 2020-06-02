@@ -502,6 +502,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     @Override
     protected void doClose() throws Exception {
         ChannelPromise promise = connectPromise;
+        // cas 来设置对应的promise的状态
         if (promise != null) {
             // Use tryFailure() instead of setFailure() to avoid the race against cancel().
             promise.tryFailure(new ClosedChannelException());

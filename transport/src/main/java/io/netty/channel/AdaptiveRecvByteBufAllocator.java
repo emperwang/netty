@@ -113,6 +113,7 @@ public class AdaptiveRecvByteBufAllocator extends DefaultMaxMessagesRecvByteBufA
             if (bytes == attemptedBytesRead()) {
                 record(bytes);
             }
+            // 记录上次读取的字节数, 并更新读取的总的字节数
             super.lastBytesRead(bytes);
         }
 

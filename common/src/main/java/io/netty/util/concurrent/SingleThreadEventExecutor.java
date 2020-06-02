@@ -75,7 +75,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                     SingleThreadEventExecutor.class, ThreadProperties.class, "threadProperties");
 
     private final Queue<Runnable> taskQueue;
-
+    // 此thread 记录具体的工作的那个线程(默认的线程工厂方法是创建一个线程然后执行任务)
     private volatile Thread thread;
     @SuppressWarnings("unused")
     private volatile ThreadProperties threadProperties;
@@ -281,12 +281,15 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
         long nanoTime = AbstractScheduledEventExecutor.nanoTime();
         for (;;) {
+            // 从scheduledTaskQueue队列中获取 scheduledTask
             Runnable scheduledTask = pollScheduledTask(nanoTime);
             if (scheduledTask == null) {
                 return true;
             }
+            // 把获取到的 scheduledTask 放入  taskQueue, 作为一个task来运行
             if (!taskQueue.offer(scheduledTask)) {
                 // No space left in the task queue add it back to the scheduledTaskQueue so we pick it up again.
+                // 添加失败,则重新放回到scheduledTaskQueue
                 scheduledTaskQueue.add((ScheduledFutureTask<?>) scheduledTask);
                 return false;
             }
@@ -371,9 +374,11 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         assert inEventLoop();
         boolean fetchedAll;
         boolean ranAtLeastOne = false;
-
+        // 循环运行taskQueue中的任务
         do {
+            // 先把scheduledTaskQueue中的要运行的任务放到 taskQueue中
             fetchedAll = fetchFromScheduledTaskQueue();
+            // 运行 taskQueue中的任务
             if (runAllTasksFrom(taskQueue)) {
                 ranAtLeastOne = true;
             }
@@ -382,6 +387,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (ranAtLeastOne) {
             lastExecutionTime = ScheduledFutureTask.nanoTime();
         }
+        // 用于子类扩展
         afterRunningAllTasks();
         return ranAtLeastOne;
     }

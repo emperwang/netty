@@ -72,7 +72,8 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         this.parent = parent;
         id = newId();
         // buffer的操作函数实例
-        // 此处是AbstractNioMessageChannel类
+        // 当实例化 NioServerSocketChannel时,此处是AbstractNioMessageChannel类 (看类图)
+        // 当实例化 NioSocketChannel时, 次数时AbstractNioByteChannel(看类图)
         unsafe = newUnsafe();
         // 为socketChannel创建pipeline
         pipeline = newChannelPipeline();
@@ -773,7 +774,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
         private void doClose0(ChannelPromise promise) {
             try {
+                // 1. 先适用cas修改对应的promise的状态
+                // 2. 调用jdk nioSocket的close方法来进行具体的关闭
                 doClose();
+                // 此处同样适用cas来修改状态
                 closeFuture.setClosed();
                 safeSetSuccess(promise);
             } catch (Throwable t) {
@@ -791,6 +795,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             assertEventLoop();
 
             try {
+                /**
+                 * 1. 适用cas修改状态
+                 * 2. 调用jdk中的nioSocket的close来进行具体的关闭操作
+                 */
                 doClose();
             } catch (Exception e) {
                 logger.warn("Failed to close a channel.", e);

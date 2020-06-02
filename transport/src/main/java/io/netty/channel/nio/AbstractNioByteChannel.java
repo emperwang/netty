@@ -129,6 +129,11 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             }
         }
 
+        /**
+         * todo 重要 重要
+         *  worker group的read操作
+         * 此操作才是真正的读取操作
+         */
         @Override
         public final void read() {
             final ChannelConfig config = config();
@@ -164,11 +169,25 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     allocHandle.incMessagesRead(1);
                     readPending = false;
                     // 执行pipeline中 channelRead事件, 来对buf中的数据进行处理
+                    // 也就是处理读取的数据
                     pipeline.fireChannelRead(byteBuf);
                     byteBuf = null;
+                    /**
+                     * 停止读取的条件:
+                     * bytesToRead > 0 && maybeMoreDataSupplier.get() -- 此是下面的函数, 判断 attemptBytesRead 和 lastBytesRead是否相等
+                     * private final UncheckedBooleanSupplier defaultMaybeMoreSupplier = new UncheckedBooleanSupplier() {
+                     *             @Override
+                     *             public boolean get() {
+                     *                 return attemptBytesRead == lastBytesRead;
+                     *             }
+                     *         };
+                     *
+                     * 也就是 读取的字节数  等于 要读取的字节数
+                     */
                 } while (allocHandle.continueReading());
                 // 读取完成  readComplete 事件
                 allocHandle.readComplete();
+                // 调用 readComplete事件
                 pipeline.fireChannelReadComplete();
 
                 if (close) {

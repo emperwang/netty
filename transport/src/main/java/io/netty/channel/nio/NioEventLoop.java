@@ -434,6 +434,14 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
     }
 
+    /**
+     * todo  重要 重要
+     * 此函数就是具体工作的入口点
+     * 如果是 boss呢, 此函数就是处理 刚accept上的socket,并把其注册到  worker上 进行具体的读写操作
+     * 如果是worker呢, 此函数就是处理 从boss注册到此上的socket的具体的读写事件
+     * 1. 先看一下 boss的处理逻辑
+     * 2. 再看一下worker的处理逻辑
+     */
     @Override
     protected void run() {
         int selectCnt = 0;
@@ -441,6 +449,11 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             try {
                 int strategy;
                 try {
+                    /**
+                     * 此处的策略选择:
+                     * 1. 有任务,则执行一次 selectNow()
+                     * 2. 没有任务则返回 select策略
+                     */
                     strategy = selectStrategy.calculateStrategy(selectNowSupplier, hasTasks());
                     switch (strategy) {
                     case SelectStrategy.CONTINUE:
@@ -484,10 +497,12 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 if (ioRatio == 100) {
                     try {
                         if (strategy > 0) {
+                            // 处理select 事件
                             processSelectedKeys();
                         }
                     } finally {
                         // Ensure we always run tasks.
+                        // 处理taskQueue 以及 scheduledTaskQueue 中的任务
                         ranTasks = runAllTasks();
                     }
                 } else if (strategy > 0) {
@@ -578,6 +593,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         if (selectedKeys != null) {
             processSelectedKeysOptimized();
         } else {
+            /**
+             * todo  处理select查询到的事件
+             */
             processSelectedKeysPlain(selector.selectedKeys());
         }
     }
@@ -604,14 +622,19 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         // check if the set is empty and if so just return to not create garbage by
         // creating a new Iterator every time even if there is nothing to process.
         // See https://github.com/netty/netty/issues/597
+        // 如果没有查询到,则直接返回了
         if (selectedKeys.isEmpty()) {
             return;
         }
-
+        // 获取 查询到的key的遍历器
         Iterator<SelectionKey> i = selectedKeys.iterator();
+        // 循环遍历查询到的selectKey,来进行处理
         for (;;) {
+            // 获取key
             final SelectionKey k = i.next();
+            // 获取其 attach的 对象
             final Object a = k.attachment();
+            // 从selectKey中 删除此要处理的key  k
             i.remove();
 
             if (a instanceof AbstractNioChannel) {
@@ -625,7 +648,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             if (!i.hasNext()) {
                 break;
             }
-
+            // 再执行一次select 操作, 并遍历处理
             if (needsToSelectAgain) {
                 selectAgain();
                 selectedKeys = selector.selectedKeys();
@@ -692,6 +715,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         }
 
         try {
+            // 获取k上就绪的事件
             int readyOps = k.readyOps();
             // We first need to call finishConnect() before try to trigger a read(...) or write(...) as otherwise
             // the NIO JDK channel implementation may throw a NotYetConnectedException.
@@ -716,7 +740,11 @@ public final class NioEventLoop extends SingleThreadEventLoop {
 
             // Also check for readOps of 0 to workaround possible JDK bug which may otherwise lead
             // to a spin loop
-            // 处理读事件
+            /**
+             * 处理读事件
+             * 1. 如果是NioServerSocketChannel  那么会执行NioMessageUnsafe 读取操作
+             * 2. 如果是NioSocketChannel       NioByteUnsafe 读取操作
+             */
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
                 unsafe.read();
             }

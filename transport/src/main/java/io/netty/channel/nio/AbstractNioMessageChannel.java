@@ -55,6 +55,9 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
         super.doBeginRead();
     }
 
+    /**
+     *  NioServerSocketChannel 读写操作类
+     */
     private final class NioMessageUnsafe extends AbstractNioUnsafe {
 
         private final List<Object> readBuf = new ArrayList<Object>();
@@ -83,13 +86,13 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                             closed = true;
                             break;
                         }
-
+                        // 统计信息增加
                         allocHandle.incMessagesRead(localRead);
                     } while (allocHandle.continueReading());
                 } catch (Throwable t) {
                     exception = t;
                 }
-
+                // 获取读取到了 多少个 NioSocketChannel,也就是客户端
                 int size = readBuf.size();
                 // 遍历读取到的 NioSocketChannel, 并把其放入到pipeline的下一个进行操作
                 // 此处的下一个pipeline handler应该是 Acceptor那个handler, 此handler就会把

@@ -337,16 +337,19 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
         doClose();
     }
 
+    // 可以看到 NioSocketChannel的关闭方法,也是调用JDK NIOSOCKET的close方法
     @Override
     protected void doClose() throws Exception {
         super.doClose();
         javaChannel().close();
     }
 
+    // 真正从 NioSocketChannel中读取数据的操作
     @Override
     protected int doReadBytes(ByteBuf byteBuf) throws Exception {
         final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
         allocHandle.attemptedBytesRead(byteBuf.writableBytes());
+        // 此处可以看到 读取还是委托到 jdk中的NioSocketChannel的读取方法
         return byteBuf.writeBytes(javaChannel(), allocHandle.attemptedBytesRead());
     }
 

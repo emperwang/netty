@@ -180,6 +180,10 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         return this;
     }
 
+    /**
+     * boss group中pipeline中的处理
+     * 其主要是吧boss读取到的NioSocketChannel 注册到worker上
+     */
     private static class ServerBootstrapAcceptor extends ChannelInboundHandlerAdapter {
 
         private final EventLoopGroup childGroup;
@@ -218,14 +222,24 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         @SuppressWarnings("unchecked")
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             final Channel child = (Channel) msg;
-
+            // 动态添加childHandler
             child.pipeline().addLast(childHandler);
 
             setChannelOptions(child, childOptions, logger);
             setAttributes(child, childAttrs);
 
             try {
+                /**
+                 * 把child注册到childGroup上
+                 * 这里childGroup 是哪个呢?
+                 * NioEventLoopGroup parent = new NioEventLoopGroup(1);
+                 * NioEventLoopGroup child = new NioEventLoopGroup();
+                 * ServerBootstrap serverBootstrap = new ServerBootstrap()
+                 *   .group(parent, child)
+                 * 就是此处的child
+                 */
                 childGroup.register(child).addListener(new ChannelFutureListener() {
+                    // 注册一个方法,如果没有成功,则执行关闭操作
                     @Override
                     public void operationComplete(ChannelFuture future) throws Exception {
                         if (!future.isSuccess()) {
