@@ -127,6 +127,7 @@ public abstract class AbstractByteBufAllocator implements ByteBufAllocator {
 
     @Override
     public ByteBuf ioBuffer() {
+        // 如果平台支持  unsafe操作, 那么就创建directBuf, 否则创建heapBuf
         if (PlatformDependent.hasUnsafe() || isDirectBufferPooled()) {
             return directBuffer(DEFAULT_INITIAL_CAPACITY);
         }
