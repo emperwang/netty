@@ -744,6 +744,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
              * 处理读事件
              * 1. 如果是NioServerSocketChannel  那么会执行NioMessageUnsafe 读取操作
              * 2. 如果是NioSocketChannel       NioByteUnsafe 读取操作
+             * 3. 调用child类的  .childHandler(new CustomServerInitializer());  方法来添加handler到pipeline中
              */
             if ((readyOps & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0 || readyOps == 0) {
                 unsafe.read();

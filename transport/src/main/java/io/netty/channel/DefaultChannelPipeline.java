@@ -606,6 +606,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
     private void callHandlerAdded0(final AbstractChannelHandlerContext ctx) {
         try {
+            // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
             ctx.callHandlerAdded();
         } catch (Throwable t) {
             boolean removed = false;
@@ -647,6 +648,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             firstRegistration = false;
             // We are now registered to the EventLoop. It's time to call the callbacks for the ChannelHandlers,
             // that were added before the registration was done.
+            // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
             callHandlerAddedForAllHandlers();
         }
     }
@@ -1112,6 +1114,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         // holding the lock and so produce a deadlock if handlerAdded(...) will try to add another handler from outside
         // the EventLoop.
         PendingHandlerCallback task = pendingHandlerCallbackHead;
+        // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
         while (task != null) {
             task.execute();
             task = task.next;
@@ -1365,11 +1368,13 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
+            // 调用unsafe方法来进行真实的操作
             unsafe.write(msg, promise);
         }
 
         @Override
         public void flush(ChannelHandlerContext ctx) {
+            // 进行flush操作
             unsafe.flush();
         }
 
@@ -1461,6 +1466,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         void execute() {
             EventExecutor executor = ctx.executor();
             if (executor.inEventLoop()) {
+                // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
                 callHandlerAdded0(ctx);
             } else {
                 try {

@@ -489,18 +489,19 @@ public class UnpooledDirectByteBuf extends AbstractReferenceCountedByteBuf {
         readerIndex += length;
         return this;
     }
-
+    // 写入
     @Override
     public int getBytes(int index, GatheringByteChannel out, int length) throws IOException {
         return getBytes(index, out, length, false);
     }
 
+    // 真实的写入操作
     private int getBytes(int index, GatheringByteChannel out, int length, boolean internal) throws IOException {
         ensureAccessible();
         if (length == 0) {
             return 0;
         }
-
+        // 到此,基本上 buffer就是directBuf了
         ByteBuffer tmpBuf;
         if (internal) {
             tmpBuf = internalNioBuffer();
@@ -508,6 +509,7 @@ public class UnpooledDirectByteBuf extends AbstractReferenceCountedByteBuf {
             tmpBuf = buffer.duplicate();
         }
         tmpBuf.clear().position(index).limit(index + length);
+        // 调用JDK NIO进行真实的写入了; 底层调用 IOUtil.write方法,IOUtil是对native方法的封装了
         return out.write(tmpBuf);
     }
 

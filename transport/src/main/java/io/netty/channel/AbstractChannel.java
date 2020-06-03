@@ -419,7 +419,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      * {@link Unsafe} implementation which sub-classes must extend and use.
      */
     protected abstract class AbstractUnsafe implements Unsafe {
-
+        // 缓存write的msg;
         private volatile ChannelOutboundBuffer outboundBuffer = new ChannelOutboundBuffer(AbstractChannel.this);
         private RecvByteBufAllocator.Handle recvHandle;
         private boolean inFlush0;
@@ -511,6 +511,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 // Ensure we call handlerAdded(...) before we actually notify the promise. This is needed as the
                 // user may already fire events through the pipeline in the ChannelFutureListener.
                 // 注册完成后, 查看是否需要回调函数  HandlerAdd
+                /**
+                 * 1. 就是在此调用.childHandler(new CustomServerInitializer()); 的方法,向pipeline中注册handler
+                 * // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
+                 */
                 pipeline.invokeHandlerAddedIfNeeded();
 
                 safeSetSuccess(promise);
@@ -881,7 +885,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         @Override
         public final void write(Object msg, ChannelPromise promise) {
             assertEventLoop();
-
+            /**
+             * todo 重点  此outboundBuffer就是把写write的消息缓存起来
+             * 是一个链表结构
+             */
             ChannelOutboundBuffer outboundBuffer = this.outboundBuffer;
             if (outboundBuffer == null) {
                 // If the outboundBuffer is null we know the channel was closed and so
@@ -896,6 +903,12 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             int size;
             try {
+                /**
+                 *  filter 过滤操作
+                 *  1. 把bytebuf 封装为 directBuf
+                 *  2. 是FileRegion 这个类型的 直接返回
+                 *  3. 不是上述两种类型则报错
+                 */
                 msg = filterOutboundMessage(msg);
                 size = pipeline.estimatorHandle().size(msg);
                 if (size < 0) {
@@ -906,20 +919,23 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 ReferenceCountUtil.release(msg);
                 return;
             }
-
+            // 把要write的消息,添加到 outboundBuffer
             outboundBuffer.addMessage(msg, size, promise);
         }
 
+        // 把缓存的msg进行真实的写入;
         @Override
         public final void flush() {
             assertEventLoop();
-
+            // 获取缓存的msg
             ChannelOutboundBuffer outboundBuffer = this.outboundBuffer;
+            // 如果没有msg呢, 直接返回
             if (outboundBuffer == null) {
                 return;
             }
-
+            // 先对缓存msg的链表进行一些update,以备下面的flush
             outboundBuffer.addFlush();
+            // flush
             flush0();
         }
 
@@ -929,12 +945,12 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 // Avoid re-entrance
                 return;
             }
-
+            // 判断是否有等待 flush的msg
             final ChannelOutboundBuffer outboundBuffer = this.outboundBuffer;
             if (outboundBuffer == null || outboundBuffer.isEmpty()) {
                 return;
             }
-
+            // 更新标志, 防止重复执行
             inFlush0 = true;
 
             // Mark all pending write requests as failure if the channel is inactive.
@@ -953,6 +969,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
             }
 
             try {
+                // flush
                 doWrite(outboundBuffer);
             } catch (Throwable t) {
                 if (t instanceof IOException && config().isAutoClose()) {
@@ -965,9 +982,11 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                      * may still return {@code true} even if the channel should be closed as result of the exception.
                      */
                     initialCloseCause = t;
+                    // 如果发生exception, 则此处调用close() 来更新对应channel的状态
                     close(voidPromise(), t, newClosedChannelException(t), false);
                 } else {
                     try {
+                        // 执行JDK NIO中的close方法
                         shutdownOutput(voidPromise(), t);
                     } catch (Throwable t2) {
                         initialCloseCause = t;
@@ -1120,6 +1139,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      */
     @UnstableApi
     protected void doShutdownOutput() throws Exception {
+        // 执行JDK NIO中的close方法
         doClose();
     }
 

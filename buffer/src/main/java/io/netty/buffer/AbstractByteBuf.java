@@ -947,8 +947,11 @@ public abstract class AbstractByteBuf extends ByteBuf {
     @Override
     public int readBytes(GatheringByteChannel out, int length)
             throws IOException {
+        // 检测可写的长度
         checkReadableBytes(length);
+        // 写入数据,并返回写入的字节数
         int readBytes = getBytes(readerIndex, out, length);
+        // 更新读取的位置
         readerIndex += readBytes;
         return readBytes;
     }

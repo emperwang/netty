@@ -76,10 +76,14 @@ public final class ChannelOutboundBuffer {
     // Entry(flushedEntry) --> ... Entry(unflushedEntry) --> ... Entry(tailEntry)
     //
     // The Entry that is the first in the linked-list structure that was flushed
+    // 此处的三个field都是具体的引用,也就是指针
+    // flushedEntry 标识要flush的链表的开头
     private Entry flushedEntry;
     // The Entry which is the first unflushed in the linked-list structure
+    // 此标识 没有flush,等待flush的开头
     private Entry unflushedEntry;
     // The Entry which represents the tail of the buffer
+    // 标识链表的尾结点
     private Entry tailEntry;
     // The number of flushed entries that are not written yet
     private int flushed;
@@ -113,19 +117,24 @@ public final class ChannelOutboundBuffer {
      */
     public void addMessage(Object msg, int size, ChannelPromise promise) {
         Entry entry = Entry.newInstance(msg, size, total(msg), promise);
+        // 1. 如果是第一次添加,则tailEntry   flushEntry初始化为 null
         if (tailEntry == null) {
             flushedEntry = null;
         } else {
+            // 2. 不是第一次,则在 tailEntry后面进行追加
             Entry tail = tailEntry;
             tail.next = entry;
         }
+        // 3. 更新tailEntry的位置
         tailEntry = entry;
+        // 4. 如果是第一次添加,则把unflushedEntry设置为要添加的  entry
         if (unflushedEntry == null) {
             unflushedEntry = entry;
         }
 
         // increment pending bytes after adding message to the unflushed arrays.
         // See https://github.com/netty/netty/issues/1619
+        // 记录要flush的消息的个数
         incrementPendingOutboundBytes(entry.pendingSize, false);
     }
 
@@ -138,7 +147,9 @@ public final class ChannelOutboundBuffer {
         // where added in the meantime.
         //
         // See https://github.com/netty/netty/issues/2577
+        // 获取等待flush的链表的第一个节点
         Entry entry = unflushedEntry;
+        // 如果节点存在,则更新到flushedEntry上
         if (entry != null) {
             if (flushedEntry == null) {
                 // there is no flushedEntry yet, so start with the entry
@@ -155,6 +166,7 @@ public final class ChannelOutboundBuffer {
             } while (entry != null);
 
             // All flushed so reset unflushedEntry
+            // 把unflushedEntry置空
             unflushedEntry = null;
         }
     }
@@ -171,7 +183,7 @@ public final class ChannelOutboundBuffer {
         if (size == 0) {
             return;
         }
-
+        // 等待flush的msg的个数更新
         long newWriteBufferSize = TOTAL_PENDING_SIZE_UPDATER.addAndGet(this, size);
         if (newWriteBufferSize > channel.config().getWriteBufferHighWaterMark()) {
             setUnwritable(invokeLater);
@@ -314,9 +326,11 @@ public final class ChannelOutboundBuffer {
 
         return true;
     }
-
+    // 1. 如果已经写完了,则把flushEntry  unflushEntry  tailEntry 全部设置为null
+    // 2. 没有写完, 则把flushEntry指向下一个entry(msg)
     private void removeEntry(Entry e) {
         if (-- flushed == 0) {
+            // 所有msg写完了
             // processed everything
             flushedEntry = null;
             if (e == tailEntry) {
@@ -324,6 +338,7 @@ public final class ChannelOutboundBuffer {
                 unflushedEntry = null;
             }
         } else {
+            // 还有数据,则移动指针到下一个msg
             flushedEntry = e.next;
         }
     }

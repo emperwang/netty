@@ -716,6 +716,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     private void invokeWrite0(Object msg, ChannelPromise promise) {
         try {
+            // 这里最终会调用到head进行处理; 直接看一下head如何做的?
             ((ChannelOutboundHandler) handler()).write(this, msg, promise);
         } catch (Throwable t) {
             notifyOutboundHandlerException(t, promise);
@@ -755,15 +756,19 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         }
     }
 
+    // 下操作
     @Override
     public ChannelFuture writeAndFlush(Object msg, ChannelPromise promise) {
+        // 此write方法,通过 中间参数 flush 来进行判断,write之后是否进行flush操作; flush也就是把缓存的数据真实写入到操作系统
         write(msg, true, promise);
         return promise;
     }
 
     void invokeWriteAndFlush(Object msg, ChannelPromise promise) {
         if (invokeHandler()) {
+            // 写操作
             invokeWrite0(msg, promise);
+            // flush 操作
             invokeFlush0();
         } else {
             writeAndFlush(msg, promise);
@@ -782,15 +787,17 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             ReferenceCountUtil.release(msg);
             throw e;
         }
-
+        // 查找pipeline中的下一个 outBound handler
         final AbstractChannelHandlerContext next = findContextOutbound(flush ?
                 (MASK_WRITE | MASK_FLUSH) : MASK_WRITE);
         final Object m = pipeline.touch(msg, next);
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
             if (flush) {
+                // 如果需要 flush操作呢, 就调用这里
                 next.invokeWriteAndFlush(m, promise);
             } else {
+                // 如果不进行flush, 就从这里处理了
                 next.invokeWrite(m, promise);
             }
         } else {
@@ -804,7 +811,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             }
         }
     }
-
+    // 写数据
     @Override
     public ChannelFuture writeAndFlush(Object msg) {
         return writeAndFlush(msg, newPromise());
@@ -936,6 +943,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     final void callHandlerAdded() throws Exception {
         // We must call setAddComplete before calling handlerAdded. Otherwise if the handlerAdded method generates
         // any pipeline events ctx.handler() will miss them because the state will not allow it.
+        // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
         if (setAddComplete()) {
             handler().handlerAdded(this);
         }

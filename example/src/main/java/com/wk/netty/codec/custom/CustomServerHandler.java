@@ -18,6 +18,9 @@ public class CustomServerHandler extends ChannelInboundHandlerAdapter {
         System.out.println(channel.remoteAddress()+"  online..");
     }
 
+    /**
+     * 从这里入手, 看netty是如何进行输入的write操作的
+     */
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         SocketPackage socketPackage = (SocketPackage) msg;
