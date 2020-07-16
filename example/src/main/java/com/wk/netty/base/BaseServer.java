@@ -34,6 +34,7 @@ public class BaseServer {
 
 
             System.out.println("server is ready .... ");
+            // 绑定地址
             ChannelFuture channelFuture = bootstrap.bind(8000).sync();
             channelFuture.addListener(new GenericFutureListener<Future<? super Void>>() {
                 @Override

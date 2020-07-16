@@ -52,7 +52,9 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
     private final Map<AttributeKey<?>, Object> childAttrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
     // 直接创建了以 ServerBootstrapConfig 配置
     private final ServerBootstrapConfig config = new ServerBootstrapConfig(this);
+    // child group 真正的处理
     private volatile EventLoopGroup childGroup;
+    // child的处理器
     private volatile ChannelHandler childHandler;
 
     public ServerBootstrap() { }
@@ -124,6 +126,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * Set the {@link ChannelHandler} which is used to serve the request for the {@link Channel}'s.
      */
     public ServerBootstrap childHandler(ChannelHandler childHandler) {
+        // child 处理器
         this.childHandler = ObjectUtil.checkNotNull(childHandler, "childHandler");
         return this;
     }
@@ -151,11 +154,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             @Override
             public void initChannel(final Channel ch) {
                 final ChannelPipeline pipeline = ch.pipeline();
+                // 处理的handler 是 ServerBootStrap中注册的 server的handler
                 ChannelHandler handler = config.handler();
                 if (handler != null) {
                     pipeline.addLast(handler);
                 }
                 // 在pipeline中创建 ServerBootstrapAcceptor 处理器,用来处理channel接入事件
+                // 重点 ......
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {

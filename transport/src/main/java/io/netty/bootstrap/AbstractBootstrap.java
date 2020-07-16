@@ -55,16 +55,19 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     static final Map.Entry<ChannelOption<?>, Object>[] EMPTY_OPTION_ARRAY = new Map.Entry[0];
     @SuppressWarnings("unchecked")
     static final Map.Entry<AttributeKey<?>, Object>[] EMPTY_ATTRIBUTE_ARRAY = new Map.Entry[0];
-
+    // boss group
     volatile EventLoopGroup group;
+    // 创建channel的工厂类
     @SuppressWarnings("deprecation")
     private volatile ChannelFactory<? extends C> channelFactory;
     private volatile SocketAddress localAddress;
 
     // The order in which ChannelOptions are applied is important they may depend on each other for validation
     // purposes.
+    // options配置channel的一些配置
     private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<ChannelOption<?>, Object>();
     private final Map<AttributeKey<?>, Object> attrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
+    // 处理器
     private volatile ChannelHandler handler;
 
     AbstractBootstrap() {
@@ -91,6 +94,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         if (this.group != null) {
             throw new IllegalStateException("group set already");
         }
+        // 记录boss group
         this.group = group;
         return self();
     }
@@ -120,7 +124,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         if (this.channelFactory != null) {
             throw new IllegalStateException("channelFactory set already");
         }
-
+        // 创建channel的工厂类
         this.channelFactory = channelFactory;
         return self();
     }
@@ -176,6 +180,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             if (value == null) {
                 options.remove(option);
             } else {
+                // 记录channel的配置
                 options.put(option, value);
             }
         }
@@ -272,7 +277,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     }
     // 端口绑定
     private ChannelFuture doBind(final SocketAddress localAddress) {
-        //
+        // 创建并初始化channel  并 注册handler
         final ChannelFuture regFuture = initAndRegister();
         final Channel channel = regFuture.channel();
         if (regFuture.cause() != null) {
