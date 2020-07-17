@@ -103,9 +103,13 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
 
     AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, EventExecutor executor,
                                   String name, Class<? extends ChannelHandler> handlerClass) {
+        // 此 handler的name
         this.name = ObjectUtil.checkNotNull(name, "name");
+        // 此handler所在的pipeline
         this.pipeline = pipeline;
+        // 默认此 线程池 为null
         this.executor = executor;
+        //
         this.executionMask = mask(handlerClass);
         // Its ordered if its driven by the EventLoop or the given Executor is an instanceof OrderedEventExecutor.
         ordered = executor == null || executor instanceof OrderedEventExecutor;

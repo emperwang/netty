@@ -109,6 +109,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
      * You either use this or {@link #channelFactory(io.netty.channel.ChannelFactory)} if your
      * {@link Channel} implementation has no no-args constructor.
      */
+    // 创建channel的工厂类 就是返回获取其 无参构造器,之后通过调用无参构造器来进行实例的创建
     public B channel(Class<? extends C> channelClass) {
         return channelFactory(new ReflectiveChannelFactory<C>(
                 ObjectUtil.checkNotNull(channelClass, "channelClass")
@@ -280,10 +281,11 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         // 创建并初始化channel  并 注册handler
         final ChannelFuture regFuture = initAndRegister();
         final Channel channel = regFuture.channel();
+        // 如果出现什么异常,则直接返回
         if (regFuture.cause() != null) {
             return regFuture;
         }
-        // regFuture此已经操作玩车, 则直接调用doBind0 进行绑定
+        // regFuture此已经操作完成, 则直接调用doBind0 进行绑定
         if (regFuture.isDone()) {
             // At this point we know that the registration was complete and successful.
             ChannelPromise promise = channel.newPromise();
@@ -335,6 +337,8 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         }
         // 此时看的是Server端,故此时是吧 NioServerSocketChannel注册到 group
         // 看一下这个注册动作
+        // config().group() 获取到的 boss group
+        // config().group().register 此操作就是把此channel注册到  boss group的NioEventLoop上
         ChannelFuture regFuture = config().group().register(channel);
         // 如果注册的过程中有什么异常, 那么就执行关闭操作
         if (regFuture.cause() != null) {

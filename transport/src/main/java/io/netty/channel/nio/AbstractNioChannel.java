@@ -78,7 +78,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
      */
     protected AbstractNioChannel(Channel parent, SelectableChannel ch, int readInterestOp) {
         super(parent);
-        // 也可以看到 javaChannel方法 放回的就是jdk底层创建的ServerSocketChannelImpl
+        // 也可以看到 javaChannel方法 返回的就是jdk底层创建的ServerSocketChannelImpl
         this.ch = ch;
         // 记录感兴趣的事件
         this.readInterestOp = readInterestOp;
@@ -412,7 +412,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         }
 
         readPending = true;
-
+        // 设置读事件
         final int interestOps = selectionKey.interestOps();
         if ((interestOps & readInterestOp) == 0) {
             // 设置读取事件

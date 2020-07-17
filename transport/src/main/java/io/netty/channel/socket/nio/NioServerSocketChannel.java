@@ -92,6 +92,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     // 看到此处创建的ServerSocketChannelImpl  感兴趣的事件是 accept
     public NioServerSocketChannel(ServerSocketChannel channel) {
         super(null, channel, SelectionKey.OP_ACCEPT);
+        // 记录此 此channel的config
         config = new NioServerSocketChannelConfig(this, javaChannel().socket());
     }
 

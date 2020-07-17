@@ -36,7 +36,8 @@ public abstract class AbstractEventExecutor extends AbstractExecutorService impl
 
     static final long DEFAULT_SHUTDOWN_QUIET_PERIOD = 2;
     static final long DEFAULT_SHUTDOWN_TIMEOUT = 15;
-
+    // 记录此 EventExceutor的parent
+    // 创建Boss流程时,创建的为NioEventLoop parent为NioEventLoopGroup
     private final EventExecutorGroup parent;
     private final Collection<EventExecutor> selfCollection = Collections.<EventExecutor>singleton(this);
 

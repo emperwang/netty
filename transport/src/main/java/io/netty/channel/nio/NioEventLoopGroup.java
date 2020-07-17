@@ -49,6 +49,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
      * {@link SelectorProvider} which is returned by {@link SelectorProvider#provider()}.
      */
     // 开始创建
+    // 从这里可以看到,此时的线程池是null,也就是还没有创建
     public NioEventLoopGroup(int nThreads) {
         this(nThreads, (Executor) null);
     }
@@ -151,6 +152,7 @@ public class NioEventLoopGroup extends MultithreadEventLoopGroup {
         // args[0]为selector
         // args[1]为selectStrategy
         // args[2]为拒绝策略
+        // parent =this,也就是 NioEventLoop的parent为NioEventLoopGroup
         return new NioEventLoop(this, executor, (SelectorProvider) args[0],
             ((SelectStrategyFactory) args[1]).newSelectStrategy(), (RejectedExecutionHandler) args[2], queueFactory);
     }

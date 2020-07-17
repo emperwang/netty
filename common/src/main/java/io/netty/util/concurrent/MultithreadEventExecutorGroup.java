@@ -29,8 +29,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * the same time.
  */
 public abstract class MultithreadEventExecutorGroup extends AbstractEventExecutorGroup {
-
+    // 创建此 group下的 NioEventLoop
     private final EventExecutor[] children;
+    // readonlyChildren 是 children的不可变集合
     private final Set<EventExecutor> readonlyChildren;
     private final AtomicInteger terminatedChildren = new AtomicInteger();
     private final Promise<?> terminationFuture = new DefaultPromise(GlobalEventExecutor.INSTANCE);
@@ -73,6 +74,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             throw new IllegalArgumentException(String.format("nThreads: %d (expected: > 0)", nThreads));
         }
         // 创建线程池
+        // 线程池在这里才开始创建
         if (executor == null) {
             // newDefaultThreadFactory() 使用了一个创建线程的功能类
             // 此ThreadPerTaskExecutor 也算不上线程池,其直接创建一个线程去执行任务
@@ -85,6 +87,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
             boolean success = false;
             try {
                 // 此处的线程池为ThreadPerTaskExecutor, 当执行任务时, 是通过创建一个线程来执行任务
+                // 创建 NioEventLoop
                 children[i] = newChild(executor, args);
                 success = true;
             } catch (Exception e) {
@@ -96,7 +99,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
                     for (int j = 0; j < i; j ++) {
                         children[j].shutdownGracefully();
                     }
-
+                    // 如果创建成功了呢,就等待此线程池结束
                     for (int j = 0; j < i; j ++) {
                         EventExecutor e = children[j];
                         try {
@@ -114,7 +117,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
         }
         // 对child创建选择器
         chooser = chooserFactory.newChooser(children);
-
+        // 线程池关闭的 回调函数
         final FutureListener<Object> terminationListener = new FutureListener<Object>() {
             @Override
             public void operationComplete(Future<Object> future) throws Exception {
@@ -123,7 +126,7 @@ public abstract class MultithreadEventExecutorGroup extends AbstractEventExecuto
                 }
             }
         };
-
+        // 注册线程池的关闭的回调函数
         for (EventExecutor e: children) {
             e.terminationFuture().addListener(terminationListener);
         }

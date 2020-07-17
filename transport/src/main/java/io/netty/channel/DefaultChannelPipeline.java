@@ -90,6 +90,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private boolean registered;
 
     protected DefaultChannelPipeline(Channel channel) {
+        // 记录此 pipeline 对应的 channel
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
         succeededFuture = new SucceededChannelFuture(channel, null);
         voidPromise =  new VoidChannelPromise(channel, true);
@@ -117,6 +118,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     private AbstractChannelHandlerContext newContext(EventExecutorGroup group, String name, ChannelHandler handler) {
+        // channel handler的上下文
         return new DefaultChannelHandlerContext(this, childExecutor(group), name, handler);
     }
 
@@ -223,7 +225,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         callHandlerAdded0(newCtx);
         return this;
     }
-
+    // 链表添加
     private void addLast0(AbstractChannelHandlerContext newCtx) {
         AbstractChannelHandlerContext prev = tail.prev;
         newCtx.prev = prev;
@@ -364,7 +366,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline addLast(ChannelHandler handler) {
         return addLast(null, handler);
     }
-
+    // 向pipeline中添加 handler
     @Override
     public final ChannelPipeline addLast(ChannelHandler... handlers) {
         return addLast(null, handlers);
@@ -373,7 +375,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     @Override
     public final ChannelPipeline addLast(EventExecutorGroup executor, ChannelHandler... handlers) {
         ObjectUtil.checkNotNull(handlers, "handlers");
-
+        // 遍历参数中的 handler,把其添加到 pipeline
         for (ChannelHandler h: handlers) {
             if (h == null) {
                 break;
@@ -1331,7 +1333,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         public void handlerRemoved(ChannelHandlerContext ctx) {
             // NOOP
         }
-
+        // 真实的端口绑定操作
         @Override
         public void bind(
                 ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) {

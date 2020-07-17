@@ -69,6 +69,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
      *        the parent of this channel. {@code null} if there's no parent.
      */
     protected AbstractChannel(Channel parent) {
+        // 记录此 NioServerSocketChannel 对应的parent,默认是null
         this.parent = parent;
         id = newId();
         // buffer的操作函数实例
