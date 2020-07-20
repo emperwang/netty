@@ -38,7 +38,7 @@ public class ReflectiveChannelFactory<T extends Channel> implements ChannelFacto
                     " does not have a public non-arg constructor", e);
         }
     }
-
+    // 通过构造器直接 直接实例化一个对象
     @Override
     public T newChannel() {
         try {
