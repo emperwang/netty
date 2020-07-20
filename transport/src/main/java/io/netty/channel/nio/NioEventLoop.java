@@ -511,6 +511,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 } else if (strategy > 0) {
                     final long ioStartTime = System.nanoTime();
                     try {
+                        // 对事件的处理
                         processSelectedKeys();
                     } finally {
                         // Ensure we always run tasks.
@@ -666,8 +667,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             }
         }
     }
-
+    // selector 事件的处理
     private void processSelectedKeysOptimized() {
+        // 遍历所有的 key 进行处理
         for (int i = 0; i < selectedKeys.size; ++i) {
             final SelectionKey k = selectedKeys.keys[i];
             // null out entry in the array to allow to have it GC'ed once the Channel close
@@ -677,6 +679,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             final Object a = k.attachment();
 
             if (a instanceof AbstractNioChannel) {
+                // 处理
                 processSelectedKey(k, (AbstractNioChannel) a);
             } else {
                 @SuppressWarnings("unchecked")

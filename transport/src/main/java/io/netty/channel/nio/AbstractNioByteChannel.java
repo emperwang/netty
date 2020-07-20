@@ -145,19 +145,21 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             final ChannelPipeline pipeline = pipeline();
             // 获取内存分配器
             final ByteBufAllocator allocator = config.getAllocator();
-            //
+            // 接收内存分配器
             final RecvByteBufAllocator.Handle allocHandle = recvBufAllocHandle();
+            // 把 一些 config中的 数据记录: 获取每次读取最大的字节数,读取的消息清零
             allocHandle.reset(config);
-
             ByteBuf byteBuf = null;
             boolean close = false;
             try {
+                // while 循环, 持续从channel中读取数据
                 do {
-                    // 使用内存分配器 分配一 一块内存
+                    // 使用内存分配器 分配一块内存
                     byteBuf = allocHandle.allocate(allocator);
                     // doReadBytes 真实读取数据
                     // allocHandle.lastBytesRead 记录上次读取的字节数
                     allocHandle.lastBytesRead(doReadBytes(byteBuf));
+                    // 如果没有读取到数据
                     if (allocHandle.lastBytesRead() <= 0) {
                         // nothing was read. release the buffer.
                         // 如果没有读取到数据呢  就释放buffer  并推出循环
@@ -175,6 +177,8 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                     readPending = false;
                     // 执行pipeline中 channelRead事件, 来对buf中的数据进行处理
                     // 也就是处理读取的数据
+                    // 此处就是用户设置的 业务代码处理了
+                    // bytebuf中就是读取到的数据
                     pipeline.fireChannelRead(byteBuf);
                     byteBuf = null;
                     /**
@@ -193,6 +197,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                 // 读取完成  readComplete 事件
                 allocHandle.readComplete();
                 // 调用 readComplete事件
+                // 用户自定义的  readComplete
                 pipeline.fireChannelReadComplete();
 
                 if (close) {
