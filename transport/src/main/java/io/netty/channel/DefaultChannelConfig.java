@@ -57,6 +57,7 @@ public class DefaultChannelConfig implements ChannelConfig {
     protected final Channel channel;
 
     private volatile ByteBufAllocator allocator = ByteBufAllocator.DEFAULT;
+    // 接收内存 的分配器
     private volatile RecvByteBufAllocator rcvBufAllocator;
     private volatile MessageSizeEstimator msgSizeEstimator = DEFAULT_MSG_SIZE_ESTIMATOR;
 
@@ -69,11 +70,13 @@ public class DefaultChannelConfig implements ChannelConfig {
     private volatile boolean pinEventExecutor = true;
 
     // 真实的recvBuffer的分配器 AdaptiveRecvByteBufAllocator
+    // 在这里创建的 接收内存分配器 AdaptiveRecvByteBufAllocator
     public DefaultChannelConfig(Channel channel) {
         this(channel, new AdaptiveRecvByteBufAllocator());
     }
 
     protected DefaultChannelConfig(Channel channel, RecvByteBufAllocator allocator) {
+        // 记录传递进来的接收内存分配器
         setRecvByteBufAllocator(allocator, channel.metadata());
         this.channel = channel;
     }
@@ -296,12 +299,14 @@ public class DefaultChannelConfig implements ChannelConfig {
      * @param metadata Used to set the {@link ChannelMetadata#defaultMaxMessagesPerRead()} if {@code allocator}
      * is of type {@link MaxMessagesRecvByteBufAllocator}.
      */
+    // 记录创建的 接收内存分配器
     private void setRecvByteBufAllocator(RecvByteBufAllocator allocator, ChannelMetadata metadata) {
         if (allocator instanceof MaxMessagesRecvByteBufAllocator) {
             ((MaxMessagesRecvByteBufAllocator) allocator).maxMessagesPerRead(metadata.defaultMaxMessagesPerRead());
         } else if (allocator == null) {
             throw new NullPointerException("allocator");
         }
+        // 接收内存的内存分配器
         setRecvByteBufAllocator(allocator);
     }
 

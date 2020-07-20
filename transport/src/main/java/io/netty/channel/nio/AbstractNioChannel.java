@@ -106,7 +106,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
     public NioUnsafe unsafe() {
         return (NioUnsafe) super.unsafe();
     }
-
+    // 在server端此处的channel就是 NioServerSocketChannel
     protected SelectableChannel javaChannel() {
         return ch;
     }
