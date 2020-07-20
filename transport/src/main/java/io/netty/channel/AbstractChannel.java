@@ -976,6 +976,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
 
             try {
                 // flush
+                // 真实的写操作
                 doWrite(outboundBuffer);
             } catch (Throwable t) {
                 if (t instanceof IOException && config().isAutoClose()) {

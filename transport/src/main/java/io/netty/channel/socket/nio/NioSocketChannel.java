@@ -380,9 +380,10 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
             ((NioSocketChannelConfig) config).setMaxBytesPerGatheringWrite(attempted >>> 1);
         }
     }
-
+    // 真实的写操作
     @Override
     protected void doWrite(ChannelOutboundBuffer in) throws Exception {
+        // 获取channel
         SocketChannel ch = javaChannel();
         int writeSpinCount = config().getWriteSpinCount();
         do {
@@ -403,6 +404,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
             switch (nioBufferCnt) {
                 case 0:
                     // We have something else beside ByteBuffers to write so fallback to normal writes.
+                    // 真正写入操作
                     writeSpinCount -= doWrite0(in);
                     break;
                 case 1: {

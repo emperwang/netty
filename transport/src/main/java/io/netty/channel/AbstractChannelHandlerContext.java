@@ -781,7 +781,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             writeAndFlush(msg, promise);
         }
     }
-
+    // 具体的写操作
     private void write(Object msg, boolean flush, ChannelPromise promise) {
         ObjectUtil.checkNotNull(msg, "msg");
         try {

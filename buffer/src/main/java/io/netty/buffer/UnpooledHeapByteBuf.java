@@ -208,7 +208,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         ensureAccessible();
         return getBytes(index, out, position, length, false);
     }
-
+    // 真实 写入 channel数据的操作
     private int getBytes(int index, GatheringByteChannel out, int length, boolean internal) throws IOException {
         ensureAccessible();
         ByteBuffer tmpBuf;
@@ -225,7 +225,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         ByteBuffer tmpBuf = internal ? internalNioBuffer() : ByteBuffer.wrap(array);
         return out.write((ByteBuffer) tmpBuf.clear().position(index).limit(index + length), position);
     }
-
+    // 写数据到 channel
     @Override
     public int readBytes(GatheringByteChannel out, int length) throws IOException {
         checkReadableBytes(length);

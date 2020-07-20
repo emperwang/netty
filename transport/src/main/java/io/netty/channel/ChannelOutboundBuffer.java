@@ -128,6 +128,7 @@ public final class ChannelOutboundBuffer {
         // 3. 更新tailEntry的位置
         tailEntry = entry;
         // 4. 如果是第一次添加,则把unflushedEntry设置为要添加的  entry
+        // unflushedEntry 相当于 第一个没有flush的entry
         if (unflushedEntry == null) {
             unflushedEntry = entry;
         }
