@@ -77,6 +77,8 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         // 当实例化 NioSocketChannel时, 次数时AbstractNioByteChannel(看类图)
         unsafe = newUnsafe();
         // 为socketChannel创建pipeline
+        // 为此channel创建handler调用链
+        // 也就是当selector接收到socket或者 读写数据时,会挨个调用此 pipeline中的handler进行处理
         pipeline = newChannelPipeline();
     }
 
@@ -109,6 +111,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     /**
      * Returns a new {@link DefaultChannelPipeline} instance.
      */
+    // 创建handler处理链, 默认 为DefaultChannelPipeline
     protected DefaultChannelPipeline newChannelPipeline() {
         return new DefaultChannelPipeline(this);
     }

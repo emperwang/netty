@@ -17,10 +17,10 @@ public class BaseServer {
         NioEventLoopGroup parent = new NioEventLoopGroup(1);
         NioEventLoopGroup child = new NioEventLoopGroup();
 
-        try {
-            ServerBootstrap bootstrap = new ServerBootstrap()
-                    .group(parent, child)
-                    .channel(NioServerSocketChannel.class)
+        try { ServerBootstrap bootstrap = new ServerBootstrap()
+                .group(parent, child)
+                .channel(NioServerSocketChannel.class)
+
                     .option(ChannelOption.SO_BACKLOG, 128)
                     //.option(ChannelOption.SO_KEEPALIVE, true)
                     .handler(new LoggingHandler())  // parent handler

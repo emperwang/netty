@@ -1248,6 +1248,8 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     }
 
     // A special catch-all handler that handles both bytes and messages.
+    // 可以看到 TailContext 中都是对具体的事件的处理
+    // 不过没有具体的实现, 且只对输入事件进行处理
     final class TailContext extends AbstractChannelHandlerContext implements ChannelInboundHandler {
 
         TailContext(DefaultChannelPipeline pipeline) {
@@ -1307,7 +1309,11 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             onUnhandledInboundChannelReadComplete();
         }
     }
-
+    // 从继承关系 ChannelOutboundHandler, ChannelInboundHandler看到
+    // 此HeadContext 既可以处理输入事件,又可以处理输出事件
+    // 从headContext来看,当有事件发生时,其会 pipeline中下一个handler传播事件
+    // 也就是调用下一个handler的对应的事件处理函数
+    // 换句话说,此才是事件发生后,处理的开始地方
     final class HeadContext extends AbstractChannelHandlerContext
             implements ChannelOutboundHandler, ChannelInboundHandler {
 
@@ -1315,6 +1321,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         HeadContext(DefaultChannelPipeline pipeline) {
             super(pipeline, null, HEAD_NAME, HeadContext.class);
+            // 获取此channel的操作类
             unsafe = pipeline.channel().unsafe();
             setAddComplete();
         }
@@ -1339,7 +1346,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 ChannelHandlerContext ctx, SocketAddress localAddress, ChannelPromise promise) {
             unsafe.bind(localAddress, promise);
         }
-
+        // 连接操作
         @Override
         public void connect(
                 ChannelHandlerContext ctx,
@@ -1347,50 +1354,50 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 ChannelPromise promise) {
             unsafe.connect(remoteAddress, localAddress, promise);
         }
-
+        // 断链操作
         @Override
         public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) {
             unsafe.disconnect(promise);
         }
-
+        // 关闭操作
         @Override
         public void close(ChannelHandlerContext ctx, ChannelPromise promise) {
             unsafe.close(promise);
         }
-
+        // 取消注册
         @Override
         public void deregister(ChannelHandlerContext ctx, ChannelPromise promise) {
             unsafe.deregister(promise);
         }
-
+        // 读取操作
         @Override
         public void read(ChannelHandlerContext ctx) {
             unsafe.beginRead();
         }
-
+        // 写操作
         @Override
         public void write(ChannelHandlerContext ctx, Object msg, ChannelPromise promise) {
             // 调用unsafe方法来进行真实的操作
             unsafe.write(msg, promise);
         }
-
+        // flush 操作
         @Override
         public void flush(ChannelHandlerContext ctx) {
             // 进行flush操作
             unsafe.flush();
         }
-
+        // 异常出现时的处理操作
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
             ctx.fireExceptionCaught(cause);
         }
-
+        // channel注册的事件操作
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) {
             invokeHandlerAddedIfNeeded();
             ctx.fireChannelRegistered();
         }
-
+        // channel 取消注册的事件 操作
         @Override
         public void channelUnregistered(ChannelHandlerContext ctx) {
             ctx.fireChannelUnregistered();
@@ -1400,42 +1407,42 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 destroy();
             }
         }
-
+        // channel active的事件
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
             ctx.fireChannelActive();
 
             readIfIsAutoRead();
         }
-
+        // channel inactive的事件
         @Override
         public void channelInactive(ChannelHandlerContext ctx) {
             ctx.fireChannelInactive();
         }
-
+        // channel的读 事件
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
             ctx.fireChannelRead(msg);
         }
-
+        // channel的读取完成事件
         @Override
         public void channelReadComplete(ChannelHandlerContext ctx) {
             ctx.fireChannelReadComplete();
 
             readIfIsAutoRead();
         }
-
+        // 是否设置channel自动读
         private void readIfIsAutoRead() {
             if (channel.config().isAutoRead()) {
                 channel.read();
             }
         }
-
+        // 用户事件
         @Override
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) {
             ctx.fireUserEventTriggered(evt);
         }
-
+        // channel WritabilityChanged 事件
         @Override
         public void channelWritabilityChanged(ChannelHandlerContext ctx) {
             ctx.fireChannelWritabilityChanged();
