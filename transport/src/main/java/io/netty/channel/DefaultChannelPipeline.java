@@ -196,20 +196,22 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelPipeline addLast(String name, ChannelHandler handler) {
         return addLast(null, name, handler);
     }
-
+    // 添加handler到 pipeline
     @Override
     public final ChannelPipeline addLast(EventExecutorGroup group, String name, ChannelHandler handler) {
         final AbstractChannelHandlerContext newCtx;
         synchronized (this) {
             checkMultiplicity(handler);
-
+            // filterName 为此handler 创建一个名字
+            // newContext 创建DefaultChannelHandlerContext 来对 包装handler的上下文内容
             newCtx = newContext(group, filterName(name, handler), handler);
-
+            // 具体的添加动作
             addLast0(newCtx);
 
             // If the registered is false it means that the channel was not registered on an eventLoop yet.
             // In this case we add the context to the pipeline and add a task that will call
             // ChannelHandler.handlerAdded(...) once the channel is registered.
+            /// 注册回调函数; 也就是在 handler添加成功后,在回调函数中调用callHandlerAdded0
             if (!registered) {
                 newCtx.setAddPending();
                 callHandlerCallbackLater(newCtx, true);
@@ -413,7 +415,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private static String generateName0(Class<?> handlerType) {
         return StringUtil.simpleClassName(handlerType) + "#0";
     }
-
+    // 从pipeline中移除一个handler的操作
     @Override
     public final ChannelPipeline remove(ChannelHandler handler) {
         remove(getContextOrDie(handler));
@@ -450,11 +452,12 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         }
         return (T) remove((AbstractChannelHandlerContext) ctx).handler();
     }
-
+    // 移除一个handler
     private AbstractChannelHandlerContext remove(final AbstractChannelHandlerContext ctx) {
         assert ctx != head && ctx != tail;
 
         synchronized (this) {
+            // 真正的移除操作
             atomicRemoveFromHandlerList(ctx);
 
             // If the registered is false it means that the channel was not registered on an eventloop yet.
@@ -476,6 +479,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                 return ctx;
             }
         }
+        // 调用handlerRemove 的事件处理函数
         callHandlerRemoved0(ctx);
         return ctx;
     }
@@ -483,6 +487,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     /**
      * Method is synchronized to make the handler removal from the double linked list atomic.
      */
+    // 从链表中删除元素的操作
     private synchronized void atomicRemoveFromHandlerList(AbstractChannelHandlerContext ctx) {
         AbstractChannelHandlerContext prev = ctx.prev;
         AbstractChannelHandlerContext next = ctx.next;
@@ -605,7 +610,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             h.added = true;
         }
     }
-
+    // 调用pipeline中handlerAdd 事件的处理函数
     private void callHandlerAdded0(final AbstractChannelHandlerContext ctx) {
         try {
             // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
@@ -633,7 +638,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             }
         }
     }
-
+    // 调用handlerRemove的事件处理函数
     private void callHandlerRemoved0(final AbstractChannelHandlerContext ctx) {
         // Notify the complete removal.
         try {
@@ -716,7 +721,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     public final ChannelHandlerContext context(String name) {
         return context0(ObjectUtil.checkNotNull(name, "name"));
     }
-
+    // 此是 在pipeline中查找 是否存在参数中的handler
     @Override
     public final ChannelHandlerContext context(ChannelHandler handler) {
         ObjectUtil.checkNotNull(handler, "handler");
@@ -727,7 +732,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             if (ctx == null) {
                 return null;
             }
-
+            // 如果存在,则返回此handler所在的 AbstractChannelHandlerContext
             if (ctx.handler() == handler) {
                 return ctx;
             }
@@ -972,7 +977,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         tail.flush();
         return this;
     }
-
+    // 端口绑定的操作
     @Override
     public final ChannelFuture bind(SocketAddress localAddress, ChannelPromise promise) {
         return tail.bind(localAddress, promise);

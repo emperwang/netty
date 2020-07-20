@@ -17,20 +17,20 @@ public class BaseServer {
         NioEventLoopGroup parent = new NioEventLoopGroup(1);
         NioEventLoopGroup child = new NioEventLoopGroup();
 
-        try { ServerBootstrap bootstrap = new ServerBootstrap()
+        try {
+            ServerBootstrap bootstrap = new ServerBootstrap()
                 .group(parent, child)
                 .channel(NioServerSocketChannel.class)
-
-                    .option(ChannelOption.SO_BACKLOG, 128)
-                    //.option(ChannelOption.SO_KEEPALIVE, true)
-                    .handler(new LoggingHandler())  // parent handler
-                    .childHandler(new ChannelInitializer<SocketChannel>() {
-                        @Override
-                        protected void initChannel(SocketChannel ch) throws Exception {
-                            ChannelPipeline pipeline = ch.pipeline();
-                            pipeline.addLast(new ServerHandler());
-                        }
-                    });    // child handler
+                .option(ChannelOption.SO_BACKLOG, 128)
+                //.option(ChannelOption.SO_KEEPALIVE, true)
+                .handler(new LoggingHandler())  // parent handler
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) throws Exception {
+                        ChannelPipeline pipeline = ch.pipeline();
+                        pipeline.addLast(new ServerHandler());
+                    }
+                });    // child handler
 
 
             System.out.println("server is ready .... ");

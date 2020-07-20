@@ -482,7 +482,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     public ChannelFuture deregister() {
         return deregister(newPromise());
     }
-
+        // 端口的绑定操作
     @Override
     public ChannelFuture bind(final SocketAddress localAddress, final ChannelPromise promise) {
         ObjectUtil.checkNotNull(localAddress, "localAddress");
@@ -494,6 +494,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         final AbstractChannelHandlerContext next = findContextOutbound(MASK_BIND);
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
+            // 绑定
             next.invokeBind(localAddress, promise);
         } else {
             safeExecute(executor, new Runnable() {
@@ -505,7 +506,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         }
         return promise;
     }
-
+    // 调用handler的绑定端口操作
     private void invokeBind(SocketAddress localAddress, ChannelPromise promise) {
         if (invokeHandler()) {
             try {
@@ -943,7 +944,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         boolean updated = HANDLER_STATE_UPDATER.compareAndSet(this, INIT, ADD_PENDING);
         assert updated; // This should always be true as it MUST be called before setAddComplete() or setRemoved().
     }
-
+    // 调用handlerAdd 事件的处理函数
     final void callHandlerAdded() throws Exception {
         // We must call setAddComplete before calling handlerAdded. Otherwise if the handlerAdded method generates
         // any pipeline events ctx.handler() will miss them because the state will not allow it.
@@ -952,7 +953,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             handler().handlerAdded(this);
         }
     }
-
+    // 调用handlerRemoved事件的处理函数
     final void callHandlerRemoved() throws Exception {
         try {
             // Only call handlerRemoved(...) if we called handlerAdded(...) before.

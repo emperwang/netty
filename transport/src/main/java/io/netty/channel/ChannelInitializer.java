@@ -102,6 +102,7 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     /**
      * {@inheritDoc} If override this method ensure you call super!
      */
+    // handlerAdd 事件的处理函数
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         if (ctx.channel().isRegistered()) {
@@ -121,13 +122,14 @@ public abstract class ChannelInitializer<C extends Channel> extends ChannelInbou
     public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
         initMap.remove(ctx);
     }
-
+    // 对channel进行初始化操作
     @SuppressWarnings("unchecked")
     private boolean initChannel(ChannelHandlerContext ctx) throws Exception {
         if (initMap.add(ctx)) { // Guard against re-entrance.
             try {
                 /**
                  * 在此处调用子类复写的  initChannel方法
+                 * initChannel 此就是用户复写的 initChannel
                  */
                 initChannel((C) ctx.channel());
             } catch (Throwable cause) {

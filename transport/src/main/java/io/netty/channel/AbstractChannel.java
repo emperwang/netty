@@ -54,6 +54,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
     private volatile SocketAddress localAddress;
     private volatile SocketAddress remoteAddress;
     private volatile EventLoop eventLoop;
+    // 此标志,表示 此channel的注册是否完成
     private volatile boolean registered;
     private boolean closeInitiated;
     private Throwable initialCloseCause;
@@ -456,7 +457,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
         public final SocketAddress remoteAddress() {
             return remoteAddress0();
         }
-
+        // 注册一个channel到 EventLoop
         @Override
         public final void register(EventLoop eventLoop, final ChannelPromise promise) {
             ObjectUtil.checkNotNull(eventLoop, "eventLoop");
@@ -498,7 +499,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 }
             }
         }
-
+        // 具体的注册 channel到 selector的操作
         private void register0(ChannelPromise promise) {
             try {
                 // check if the channel is still open as it could be closed in the mean time when the register
@@ -547,7 +548,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 safeSetFailure(promise, t);
             }
         }
-
+        // 端口绑定操作
         @Override
         public final void bind(final SocketAddress localAddress, final ChannelPromise promise) {
             assertEventLoop();

@@ -375,6 +375,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         return loop instanceof NioEventLoop;
     }
 
+    // 注册操作;注册channel到selector上
     @Override
     protected void doRegister() throws Exception {
         boolean selected = false;

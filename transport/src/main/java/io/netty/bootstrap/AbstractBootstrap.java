@@ -461,7 +461,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
             channel.attr(key).set(e.getValue());
         }
     }
-
+    // 配置channel的属性
     static void setChannelOptions(
             Channel channel, Map.Entry<ChannelOption<?>, Object>[] options, InternalLogger logger) {
         for (Map.Entry<ChannelOption<?>, Object> e: options) {

@@ -132,7 +132,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     protected SocketAddress localAddress0() {
         return SocketUtils.localSocketAddress(javaChannel().socket());
     }
-
+    // 端口的绑定操作
     @SuppressJava6Requirement(reason = "Usage guarded by java version check")
     @Override
     protected void doBind(SocketAddress localAddress) throws Exception {
@@ -214,7 +214,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
         protected void autoReadCleared() {
             clearReadPending();
         }
-
+        // channel属性配置
         @Override
         public <T> boolean setOption(ChannelOption<T> option, T value) {
             if (PlatformDependent.javaVersion() >= 7 && option instanceof NioChannelOption) {

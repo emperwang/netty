@@ -55,6 +55,7 @@ public final class NioChannelOption<T> extends ChannelOption<T> {
     // See https://github.com/netty/netty/issues/8166
 
     // Internal helper methods to remove code duplication between Nio*Channel implementations.
+    // 配置 channel的属性
     @SuppressJava6Requirement(reason = "Usage guarded by java version check")
     static <T> boolean setOption(Channel jdkChannel, NioChannelOption<T> option, T value) {
         java.nio.channels.NetworkChannel channel = (java.nio.channels.NetworkChannel) jdkChannel;
@@ -67,6 +68,7 @@ public final class NioChannelOption<T> extends ChannelOption<T> {
             return false;
         }
         try {
+            // 属性的设置
             channel.setOption(option.option, value);
             return true;
         } catch (IOException e) {
