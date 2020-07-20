@@ -594,6 +594,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     // 对selector事件的处理
     private void processSelectedKeys() {
         if (selectedKeys != null) {
+            // 具体是执行这里
             processSelectedKeysOptimized();
         } else {
             /**

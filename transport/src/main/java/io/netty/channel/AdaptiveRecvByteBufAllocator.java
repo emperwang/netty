@@ -116,7 +116,7 @@ public class AdaptiveRecvByteBufAllocator extends DefaultMaxMessagesRecvByteBufA
             // 记录上次读取的字节数, 并更新读取的总的字节数
             super.lastBytesRead(bytes);
         }
-
+        // 读取 msg时 分配的内存大小
         @Override
         public int guess() {
             return nextReceiveBufferSize;

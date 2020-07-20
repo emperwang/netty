@@ -24,7 +24,7 @@ public class BaseServer {
                 .option(ChannelOption.SO_BACKLOG, 128)
                 //.option(ChannelOption.SO_KEEPALIVE, true)
                 .handler(new LoggingHandler())  // parent handler
-                .childHandler(new ChannelInitializer<SocketChannel>() {
+                .childHandler(new ChannelInitializer<SocketChannel>() {// 向worker中注册具体的业务处理器
                     @Override
                     protected void initChannel(SocketChannel ch) throws Exception {
                         ChannelPipeline pipeline = ch.pipeline();

@@ -1139,7 +1139,7 @@ public abstract class AbstractByteBuf extends ByteBuf {
         // 2. 对byteBuf进行扩容
         ensureWritable(length);
         // setBytes 读取数据
-        // 1. 调用 in来进行读取数据到buf中, 其中buf有 directBuf 和 heapBuf; 也就是对外内存和 堆内存
+        // 1. 调用 in来进行读取数据到buf中, 其中buf有 directBuf 和 heapBuf; 也就是堆外内存和 堆内存
         int writtenBytes = setBytes(writerIndex, in, length);
         // 读取完数据后  更新 writerIndex的位置
         if (writtenBytes > 0) {

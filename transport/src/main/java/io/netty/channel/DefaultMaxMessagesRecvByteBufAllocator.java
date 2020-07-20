@@ -115,7 +115,7 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
             // 总消息数和 总的读取的byte数
             totalMessages = totalBytesRead = 0;
         }
-
+        // 使用内存分配器 分配一块内存
         @Override
         public ByteBuf allocate(ByteBufAllocator alloc) {
             return alloc.ioBuffer(guess());

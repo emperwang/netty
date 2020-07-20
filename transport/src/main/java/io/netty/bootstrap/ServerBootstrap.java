@@ -244,6 +244,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                  * ServerBootstrap serverBootstrap = new ServerBootstrap()
                  *   .group(parent, child)
                  * 就是此处的child
+                 *
+                 *  此处的 child 是 NioSocketChannel
                  */
                 childGroup.register(child).addListener(new ChannelFutureListener() {
                     // 注册一个方法,如果没有成功,则执行关闭操作
