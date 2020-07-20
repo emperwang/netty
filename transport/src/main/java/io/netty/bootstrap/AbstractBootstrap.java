@@ -323,8 +323,11 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
         try {
             // 此处其实就是通过反射, 创建一个通过 channel 执行的class的 实例
             // 此时看的是server端的绑定,故此应该看一下 NioServerSocketChannel的构造器
+            // 此处创建了 NioServerSocketChannel
+            // 重点
             channel = channelFactory.newChannel();
             // 对创建的channel 进行初始化
+            // 重点
             init(channel);
         } catch (Throwable t) {
             if (channel != null) {
