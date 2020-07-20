@@ -278,7 +278,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
             }
         }
     }
-
+    // 这里是吧 scheduledTaskQueue中的任务放入到 taskQueue中
     private boolean fetchFromScheduledTaskQueue() {
         if (scheduledTaskQueue == null || scheduledTaskQueue.isEmpty()) {
             return true;
@@ -429,12 +429,14 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      *
      * @return {@code true} if at least one task was executed.
      */
+    // 轮询获取taskQueue中的所有task 并挨个 进行执行
     protected final boolean runAllTasksFrom(Queue<Runnable> taskQueue) {
         Runnable task = pollTaskFrom(taskQueue);
         if (task == null) {
             return false;
         }
         for (;;) {
+            // safeExecute 也就是会把 运行中出现的异常 catch住
             safeExecute(task);
             task = pollTaskFrom(taskQueue);
             if (task == null) {
@@ -985,7 +987,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         }
         return false;
     }
-
+    // 真正启动的操作
     private void doStartThread() {
         assert thread == null;
         executor.execute(new Runnable() {

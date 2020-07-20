@@ -591,7 +591,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             // Ignore.
         }
     }
-
+    // 对selector事件的处理
     private void processSelectedKeys() {
         if (selectedKeys != null) {
             processSelectedKeysOptimized();
@@ -620,7 +620,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             needsToSelectAgain = true;
         }
     }
-
+    // 处理selector的事件
     private void processSelectedKeysPlain(Set<SelectionKey> selectedKeys) {
         // check if the set is empty and if so just return to not create garbage by
         // creating a new Iterator every time even if there is nothing to process.

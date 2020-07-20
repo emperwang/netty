@@ -149,7 +149,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
     protected void doClose() throws Exception {
         javaChannel().close();
     }
-
+    // server端 读取 客户端的连接
     @Override
     protected int doReadMessages(List<Object> buf) throws Exception {
         // 接收新的客户端连接
@@ -158,6 +158,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
         try {
             // 如果接收的连接不为null, 则封装为NioSocketChannel
             if (ch != null) {
+                // 把读取的客户端连接  放入到 参数列表中
                 buf.add(new NioSocketChannel(this, ch));
                 return 1;
             }

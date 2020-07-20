@@ -357,7 +357,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             fireUserEventTriggered(event);
         }
     }
-
+    // 调用pipeline中下一个handler
     @Override
     public ChannelHandlerContext fireChannelRead(final Object msg) {
         invokeChannelRead(findContextInbound(MASK_CHANNEL_READ), msg);
