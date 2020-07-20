@@ -28,7 +28,8 @@ import io.netty.util.UncheckedBooleanSupplier;
 public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessagesRecvByteBufAllocator {
     private volatile int maxMessagesPerRead;
     private volatile boolean respectMaybeMoreData = true;
-
+    // 默认每次读取 为1
+    // 也就是设置 maxMessagesPerRead=1
     public DefaultMaxMessagesRecvByteBufAllocator() {
         this(1);
     }
@@ -89,12 +90,16 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
         private int maxMessagePerRead;
         private int totalMessages;
         private int totalBytesRead;
+        // 尝试读取的字节数
         private int attemptedBytesRead;
+        // 上次读取的 字节数
         private int lastBytesRead;
+        // 默认为 true
         private final boolean respectMaybeMoreData = DefaultMaxMessagesRecvByteBufAllocator.this.respectMaybeMoreData;
         private final UncheckedBooleanSupplier defaultMaybeMoreSupplier = new UncheckedBooleanSupplier() {
             @Override
             public boolean get() {
+                // 上次读取数和尝试读取的数  是否相等
                 return attemptedBytesRead == lastBytesRead;
             }
         };
@@ -105,7 +110,9 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
         @Override
         public void reset(ChannelConfig config) {
             this.config = config;
+            // 每次读取的对打byte数
             maxMessagePerRead = maxMessagesPerRead();
+            // 总消息数和 总的读取的byte数
             totalMessages = totalBytesRead = 0;
         }
 
@@ -113,7 +120,7 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
         public ByteBuf allocate(ByteBufAllocator alloc) {
             return alloc.ioBuffer(guess());
         }
-
+        // 读取的消息数 增加
         @Override
         public final void incMessagesRead(int amt) {
             totalMessages += amt;
@@ -136,7 +143,9 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
         public boolean continueReading() {
             return continueReading(defaultMaybeMoreSupplier);
         }
-
+        // 是否继续读
+        // 配置了自动读 && (respectMaybeMoreData默认为true || 上次读取的byte数 和 尝试读取的byte 数 是否一致) &&
+        // 总读取的消息数<每次读取的最大消息数 && 总读取的byte数>0
         @Override
         public boolean continueReading(UncheckedBooleanSupplier maybeMoreDataSupplier) {
             return config.isAutoRead() &&
@@ -144,7 +153,7 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
                    totalMessages < maxMessagePerRead &&
                    totalBytesRead > 0;
         }
-
+        // 读取完成操作
         @Override
         public void readComplete() {
         }

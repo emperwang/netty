@@ -491,7 +491,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                     handleLoopException(e);
                     continue;
                 }
-
+                // 增加select 次数
                 selectCnt++;
                 cancelledKeys = 0;
                 needsToSelectAgain = false;
@@ -693,8 +693,9 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             }
         }
     }
-
+    // 对selector 事件的处理
     private void processSelectedKey(SelectionKey k, AbstractNioChannel ch) {
+        // channel对应的处理函数
         final AbstractNioChannel.NioUnsafe unsafe = ch.unsafe();
         if (!k.isValid()) {
             final EventLoop eventLoop;
@@ -730,7 +731,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
                 ops &= ~SelectionKey.OP_CONNECT;
                 // 清除connect事件
                 k.interestOps(ops);
-
+                // finishConnect事件的处理
                 unsafe.finishConnect();
             }
 

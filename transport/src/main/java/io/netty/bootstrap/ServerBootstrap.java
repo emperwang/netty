@@ -230,8 +230,9 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             final Channel child = (Channel) msg;
             // 动态添加childHandler
             child.pipeline().addLast(childHandler);
-
+            // 设置此 channel的 option
             setChannelOptions(child, childOptions, logger);
+            // 设置此 channel的 attribute
             setAttributes(child, childAttrs);
 
             try {

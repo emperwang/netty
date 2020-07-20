@@ -363,11 +363,12 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         invokeChannelRead(findContextInbound(MASK_CHANNEL_READ), msg);
         return this;
     }
-
+    // 调用 channelRead 事件的处理函数
     static void invokeChannelRead(final AbstractChannelHandlerContext next, Object msg) {
         final Object m = next.pipeline.touch(ObjectUtil.checkNotNull(msg, "msg"), next);
         EventExecutor executor = next.executor();
         if (executor.inEventLoop()) {
+            // 第一次的时候,此处的 next 应该是 head
             next.invokeChannelRead(m);
         } else {
             executor.execute(new Runnable() {
@@ -378,10 +379,11 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             });
         }
     }
-
+    // 调用 handler的 channelRead事件的处理方法
     private void invokeChannelRead(Object msg) {
         if (invokeHandler()) {
             try {
+                // 调用 channelRead
                 ((ChannelInboundHandler) handler()).channelRead(this, msg);
             } catch (Throwable t) {
                 invokeExceptionCaught(t);

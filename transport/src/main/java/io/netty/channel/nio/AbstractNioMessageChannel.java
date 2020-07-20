@@ -62,11 +62,13 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
     private final class NioMessageUnsafe extends AbstractNioUnsafe {
 
         private final List<Object> readBuf = new ArrayList<Object>();
-
+        // server端channel读取操作
         @Override
         public void read() {
             assert eventLoop().inEventLoop();
+            // 获取此channel的 配置
             final ChannelConfig config = config();
+            // 获取此channel的 pipeline
             final ChannelPipeline pipeline = pipeline();
             // 在DefaultChannelConfig中创建了recvBuffer的分配器
             final RecvByteBufAllocator.Handle allocHandle = unsafe().recvBufAllocHandle();
@@ -104,6 +106,7 @@ public abstract class AbstractNioMessageChannel extends AbstractNioChannel {
                 }
                 readBuf.clear();
                 allocHandle.readComplete();
+                // channelReadComplete操作
                 pipeline.fireChannelReadComplete();
 
                 if (exception != null) {

@@ -562,6 +562,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
         if (!inEventLoop) {
             // Use offer as we actually only need this to unblock the thread and if offer fails we do not care as there
             // is already something in the queue.
+            // 添加一个空任务到任务队列中
             taskQueue.offer(WAKEUP_TASK);
         }
     }
@@ -821,7 +822,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
 
         return isTerminated();
     }
-
+    // 当向 NioEventLoop添加任务时,就会启动具体的操作进行
     @Override
     public void execute(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
@@ -832,13 +833,15 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     public void lazyExecute(Runnable task) {
         execute(ObjectUtil.checkNotNull(task, "task"), false);
     }
-
+    // 执行任务
     private void execute(Runnable task, boolean immediate) {
         boolean inEventLoop = inEventLoop();
+        // 添加任务到队列中
         addTask(task);
         if (!inEventLoop) {
-            startThread();
-            if (isShutdown()) {
+            startThread();  // 如果是server,这里就会启动接收的处理
+                            // 如果是client,这里就会启动具体的read/write请求
+            if (isShutdown()) { // 如果线程池已经关系,则移除此添加的任务
                 boolean reject = false;
                 try {
                     if (removeTask(task)) {
@@ -948,7 +951,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     // ScheduledExecutorService implementation
 
     private static final long SCHEDULE_PURGE_INTERVAL = TimeUnit.SECONDS.toNanos(1);
-
+    // 启动当前的NioEventLoop 对selector 事件的处理
     private void startThread() {
         if (state == ST_NOT_STARTED) {
             if (STATE_UPDATER.compareAndSet(this, ST_NOT_STARTED, ST_STARTED)) {
@@ -956,7 +959,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 try {
                     doStartThread();
                     success = true;
-                } finally {
+                } finally { // 如果没有启动成功,则再次把状态更新为 ST_NOT_STARTED
                     if (!success) {
                         STATE_UPDATER.compareAndSet(this, ST_STARTED, ST_NOT_STARTED);
                     }
@@ -996,6 +999,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                 boolean success = false;
                 updateLastExecutionTime();
                 try {
+                    // 运行具体的处理任务
                     SingleThreadEventExecutor.this.run();
                     success = true;
                 } catch (Throwable t) {

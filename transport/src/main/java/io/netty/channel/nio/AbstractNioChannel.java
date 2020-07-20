@@ -304,6 +304,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
             // Regardless if the connection attempt was cancelled, channelActive() event should be triggered,
             // because what happened is what happened.
+            // 激发channelActive的事件的处理函数
             if (!wasActive && active) {
                 pipeline().fireChannelActive();
             }
@@ -324,7 +325,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             promise.tryFailure(cause);
             closeIfClosed();
         }
-
+        // 连接完成事件的处理函数
         @Override
         public final void finishConnect() {
             // Note this method is invoked by the event loop only if the connection attempt was
@@ -333,8 +334,12 @@ public abstract class AbstractNioChannel extends AbstractChannel {
             assert eventLoop().inEventLoop();
 
             try {
+                // 是否active
                 boolean wasActive = isActive();
+                // 如果连接没有完成,会报错
                 doFinishConnect();
+                // 连接完成 且 channel active
+                // 则会触发 channelActive事件
                 fulfillConnectPromise(connectPromise, wasActive);
             } catch (Throwable t) {
                 fulfillConnectPromise(connectPromise, annotateConnectException(t, requestedRemoteAddress));

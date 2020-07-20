@@ -923,7 +923,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         AbstractChannelHandlerContext.invokeUserEventTriggered(head, event);
         return this;
     }
-
+    // 从head开始调用pipeline的 channelRead 事件的处理函数
     @Override
     public final ChannelPipeline fireChannelRead(Object msg) {
         AbstractChannelHandlerContext.invokeChannelRead(head, msg);
