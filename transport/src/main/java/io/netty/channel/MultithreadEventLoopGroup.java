@@ -40,7 +40,8 @@ public abstract class MultithreadEventLoopGroup extends MultithreadEventExecutor
      * 可以看到默认的线程数量是在静态代码中初始化的
      */
     static {
-        // 选择io.netty.eventLoopThreads属性值和 可用cpu数*2 之间选择一个大的
+        // 选择io.netty.eventLoopThreads属性值和io.netty.eventLoopThreads之间选择一个大的
+        // 默认是可用cpu数*2
         DEFAULT_EVENT_LOOP_THREADS = Math.max(1, SystemPropertyUtil.getInt(
                 "io.netty.eventLoopThreads", NettyRuntime.availableProcessors() * 2));
 
