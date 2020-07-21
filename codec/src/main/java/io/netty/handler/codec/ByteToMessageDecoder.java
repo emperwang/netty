@@ -83,7 +83,9 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      */
     /**
      * 对于粘包拆包 平时处理也是持续从socket中读取数据,并判断是否是一个完整的包内容; 1. 如果是完整包呢,就处理;  2, 如果不是,继续读
-     * netty处理方法类似,此处的MERGE_CUMULATOR 就是缓存器nety多次读取的数据,并传递到后面进行 完整包的判断
+     * netty处理方法类似,此处的MERGE_CUMULATOR 就是缓存器netty多次读取的数据,并传递到后面进行 完整包的判断
+     *
+     * 就是把in中的数据读取到 cumulation, 如果cumulation中的空间不够,则使用alloc分配器进行扩容
      */
     public static final Cumulator MERGE_CUMULATOR = new Cumulator() {
         @Override
@@ -160,10 +162,12 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
     private static final byte STATE_INIT = 0;
     private static final byte STATE_CALLING_CHILD_DECODE = 1;
     private static final byte STATE_HANDLER_REMOVED_PENDING = 2;
-
+    // 存储读取数据的 缓存
     ByteBuf cumulation;
     private Cumulator cumulator = MERGE_CUMULATOR;
     private boolean singleDecode;
+    // 记录是否是第一个此进行读取
+    // 如果 cumulation==null,则说明是第一次进行数的读取
     private boolean first;
 
     /**
@@ -285,10 +289,14 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 first = cumulation == null;
                 // 1. 那么就给cumulator设置初始值为Unpooled.EMPTY_BUFFER
                 // 2. 否则就使用原来,并把接收到的数据 msg写入到cumulator中
+                // ctx.alloc() 获取此channel对应的内存分配器
+
+                // *********重要********* 此处就是主要的读取操作,把msg读取到cumulation中
                 cumulation = cumulator.cumulate(ctx.alloc(),
                         first ? Unpooled.EMPTY_BUFFER : cumulation, (ByteBuf) msg);
                 // 调用解码器
                 // 1. 解析器的作用,把读取的byte字节,解码到业务中的对象,并把对象添加到 out 这个list中
+                // 解码
                 callDecode(ctx, cumulation, out);
             } catch (DecoderException e) {
                 throw e;
@@ -296,19 +304,23 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
                 throw new DecoderException(e);
             } finally {
                 try {
+                    // 如果cumulation中还有数据,到这里后就会进行 释放,也就是把剩下的数据删除了
                     if (cumulation != null && !cumulation.isReadable()) {
                         numReads = 0;
                         cumulation.release();
                         cumulation = null;
+                        // 如果读取次数大于 discardAfterReads,也进行删除操作
                     } else if (++numReads >= discardAfterReads) {
                         // We did enough reads already try to discard some bytes so we not risk to see a OOME.
                         // See https://github.com/netty/netty/issues/4275
                         numReads = 0;
+                        // 释放内存中的数据
                         discardSomeReadBytes();
                     }
-
+                    // 获取读取到的对象数
                     int size = out.size();
                     firedChannelRead |= out.insertSinceRecycled();
+                    // 调用下面 handler 业务代码的处理
                     fireChannelRead(ctx, out, size);
                 } finally {
                     out.recycle();
@@ -337,6 +349,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      * Get {@code numElements} out of the {@link CodecOutputList} and forward these through the pipeline.
      */
     static void fireChannelRead(ChannelHandlerContext ctx, CodecOutputList msgs, int numElements) {
+        // 调用后面的业务代码对msgs中读取的数据进行处理
         for (int i = 0; i < numElements; i ++) {
             // 遍历每一个msg,调用后面的解码
             ctx.fireChannelRead(msgs.getUnsafe(i));
@@ -507,6 +520,7 @@ public abstract class ByteToMessageDecoder extends ChannelInboundHandlerAdapter 
      * @param out           the {@link List} to which decoded messages should be added
      * @throws Exception    is thrown if an error occurs
      */
+    // 具体的解码操作,由具体的实现类 来进行
     protected abstract void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception;
 
     /**
