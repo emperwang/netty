@@ -61,14 +61,16 @@ public class DefaultChannelPipeline implements ChannelPipeline {
     private static final AtomicReferenceFieldUpdater<DefaultChannelPipeline, MessageSizeEstimator.Handle> ESTIMATOR =
             AtomicReferenceFieldUpdater.newUpdater(
                     DefaultChannelPipeline.class, MessageSizeEstimator.Handle.class, "estimatorHandle");
+    // head  handler
     final AbstractChannelHandlerContext head;
+    // 尾 handler
     final AbstractChannelHandlerContext tail;
 
     private final Channel channel;
     private final ChannelFuture succeededFuture;
     private final VoidChannelPromise voidPromise;
     private final boolean touch = ResourceLeakDetector.isEnabled();
-
+    // 记录子线程池 执行器
     private Map<EventExecutorGroup, EventExecutor> childExecutors;
     private volatile MessageSizeEstimator.Handle estimatorHandle;
     private boolean firstRegistration = true;
@@ -81,6 +83,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
      * Thus full iterations to do insertions is assumed to be a good compromised to saving memory and tail management
      * complexity.
      */
+    // handler事件的回调chain
     private PendingHandlerCallback pendingHandlerCallbackHead;
 
     /**
@@ -94,10 +97,11 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         this.channel = ObjectUtil.checkNotNull(channel, "channel");
         succeededFuture = new SucceededChannelFuture(channel, null);
         voidPromise =  new VoidChannelPromise(channel, true);
-
+        // pipeline的 最后一个handler
         tail = new TailContext(this);
+        // pipeline的第一个pipeline
         head = new HeadContext(this);
-
+        // 连接成 chain, 方便调用
         head.next = tail;
         tail.prev = head;
     }
@@ -648,7 +652,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
                     ctx.handler().getClass().getName() + ".handlerRemoved() has thrown an exception.", t));
         }
     }
-
+    //  调用ChannelInitializer中的 handlerAdd -> initChannel 进行 handler的注册动作
     final void invokeHandlerAddedIfNeeded() {
         assert channel.eventLoop().inEventLoop();
         if (firstRegistration) {
@@ -1127,23 +1131,27 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             task = task.next;
         }
     }
-
+    // 这里同样是基于事件的回调函数
+    // 当handler添加 以及  remove时, 调用具体的回调函数
     private void callHandlerCallbackLater(AbstractChannelHandlerContext ctx, boolean added) {
         assert !registered;
-
+        // PendingHandlerAddedTask handler添加的事件回调
+        // PendingHandlerRemovedTask handler移除的 事件回调
         PendingHandlerCallback task = added ? new PendingHandlerAddedTask(ctx) : new PendingHandlerRemovedTask(ctx);
         PendingHandlerCallback pending = pendingHandlerCallbackHead;
+        // 这里可以看到 并没有立即执行, 只是添加到 要给chain中, 用于后续调用
         if (pending == null) {
             pendingHandlerCallbackHead = task;
         } else {
             // Find the tail of the linked-list.
+            // 把task添加到 chain的最后
             while (pending.next != null) {
                 pending = pending.next;
             }
             pending.next = task;
         }
     }
-
+    // 调用handler add事件处理
     private void callHandlerAddedInEventLoop(final AbstractChannelHandlerContext newCtx, EventExecutor executor) {
         newCtx.setAddPending();
         executor.execute(new Runnable() {
@@ -1306,6 +1314,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) {
+            // 到这里还没有处理的消息, 会release
             onUnhandledInboundMessage(ctx, msg);
         }
 
@@ -1416,7 +1425,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         @Override
         public void channelActive(ChannelHandlerContext ctx) {
             ctx.fireChannelActive();
-
+            // 如果设置了 自动读取, 在这里会进行自动读取的动作
             readIfIsAutoRead();
         }
         // channel inactive的事件
@@ -1437,6 +1446,7 @@ public class DefaultChannelPipeline implements ChannelPipeline {
             readIfIsAutoRead();
         }
         // 是否设置channel自动读
+        // server端会设置 自动读的操作
         private void readIfIsAutoRead() {
             if (channel.config().isAutoRead()) {
                 channel.read();

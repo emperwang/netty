@@ -61,9 +61,11 @@ import static io.netty.channel.ChannelHandlerMask.mask;
 abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, ResourceLeakHint {
 
     private static final InternalLogger logger = InternalLoggerFactory.getInstance(AbstractChannelHandlerContext.class);
+    // 记录当前 context的后一个 前一个  context
+    // 用于把 handler 设置成 chain,  可以方便设置调用顺序, 能达到 和切面一样的效果, 而且速度也很快
     volatile AbstractChannelHandlerContext next;
     volatile AbstractChannelHandlerContext prev;
-
+    // 原子更新 某个class 的field
     private static final AtomicIntegerFieldUpdater<AbstractChannelHandlerContext> HANDLER_STATE_UPDATER =
             AtomicIntegerFieldUpdater.newUpdater(AbstractChannelHandlerContext.class, "handlerState");
 
@@ -98,7 +100,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
     // Lazily instantiated tasks used to trigger events to a handler with different executor.
     // There is no need to make this volatile as at worse it will just create a few more instances then needed.
     private Tasks invokeTasks;
-
+    // 记录handler的状态, 原子的去更新
     private volatile int handlerState = INIT;
 
     AbstractChannelHandlerContext(DefaultChannelPipeline pipeline, EventExecutor executor,
@@ -273,7 +275,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             fireChannelInactive();
         }
     }
-
+    // 查找 pipieline中的handler 并进行调用
     @Override
     public ChannelHandlerContext fireExceptionCaught(final Throwable cause) {
         invokeExceptionCaught(findContextInbound(MASK_EXCEPTION_CAUGHT), cause);
@@ -941,7 +943,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
             }
         }
     }
-
+    // 更新状态
     final void setAddPending() {
         boolean updated = HANDLER_STATE_UPDATER.compareAndSet(this, INIT, ADD_PENDING);
         assert updated; // This should always be true as it MUST be called before setAddComplete() or setRemoved().
@@ -951,6 +953,7 @@ abstract class AbstractChannelHandlerContext implements ChannelHandlerContext, R
         // We must call setAddComplete before calling handlerAdded. Otherwise if the handlerAdded method generates
         // any pipeline events ctx.handler() will miss them because the state will not allow it.
         // 最终会调用到 ChannelInitializer中的 handlerAdd--> initChannel方法
+        // 再次更新 handler的状态
         if (setAddComplete()) {
             handler().handlerAdded(this);
         }

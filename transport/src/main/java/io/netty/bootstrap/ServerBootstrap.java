@@ -162,6 +162,8 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
                 }
                 // 在pipeline中创建 ServerBootstrapAcceptor 处理器,用来处理channel接入事件
                 // 重点 ......
+                // ServerBootstrapAcceptor 主要是把 server端 接收到的 客户端 SocketChannel 注册到 childGroup中
+                // 并且为 此接收到的  socketChannel设置了 option attribute等信息
                 ch.eventLoop().execute(new Runnable() {
                     @Override
                     public void run() {
@@ -191,7 +193,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
      * 其主要是吧boss读取到的NioSocketChannel 注册到worker上
      */
     private static class ServerBootstrapAcceptor extends ChannelInboundHandlerAdapter {
-
+        // 记录的都是 child的信息
         private final EventLoopGroup childGroup;
         private final ChannelHandler childHandler;
         private final Entry<ChannelOption<?>, Object>[] childOptions;
@@ -201,9 +203,13 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
         ServerBootstrapAcceptor(
                 final Channel channel, EventLoopGroup childGroup, ChannelHandler childHandler,
                 Entry<ChannelOption<?>, Object>[] childOptions, Entry<AttributeKey<?>, Object>[] childAttrs) {
+            // worker 工作组
             this.childGroup = childGroup;
+            // worker的handler
             this.childHandler = childHandler;
+            // child options
             this.childOptions = childOptions;
+            // child的 attributes
             this.childAttrs = childAttrs;
 
             // Task which is scheduled to re-enable auto-read.
@@ -211,6 +217,7 @@ public class ServerBootstrap extends AbstractBootstrap<ServerBootstrap, ServerCh
             // not be able to load the class because of the file limit it already reached.
             //
             // See https://github.com/netty/netty/issues/1328
+            // 设置server端自动读
             enableAutoReadTask = new Runnable() {
                 @Override
                 public void run() {
