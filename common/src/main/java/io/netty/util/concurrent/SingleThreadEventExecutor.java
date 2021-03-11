@@ -73,7 +73,7 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
     private static final AtomicReferenceFieldUpdater<SingleThreadEventExecutor, ThreadProperties> PROPERTIES_UPDATER =
             AtomicReferenceFieldUpdater.newUpdater(
                     SingleThreadEventExecutor.class, ThreadProperties.class, "threadProperties");
-
+        // 存储任务的 任务队列
     private final Queue<Runnable> taskQueue;
     // 此thread 记录具体的工作的那个线程(默认的线程工厂方法是创建一个线程然后执行任务)
     private volatile Thread thread;
@@ -156,9 +156,13 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
                                         RejectedExecutionHandler rejectedHandler) {
         super(parent);
         this.addTaskWakesUp = addTaskWakesUp;
+        // 最大等待任务数
         this.maxPendingTasks = Math.max(16, maxPendingTasks);
+        // 线程池
         this.executor = ThreadExecutorMap.apply(executor, this);
+        // 任务队列
         taskQueue = newTaskQueue(this.maxPendingTasks);
+        // 拒绝策略
         rejectedExecutionHandler = ObjectUtil.checkNotNull(rejectedHandler, "rejectedHandler");
     }
 
@@ -348,13 +352,14 @@ public abstract class SingleThreadEventExecutor extends AbstractScheduledEventEx
      * Add a task to the task queue, or throws a {@link RejectedExecutionException} if this instance was shutdown
      * before.
      */
+    // 添加任务
     protected void addTask(Runnable task) {
         ObjectUtil.checkNotNull(task, "task");
         if (!offerTask(task)) {
             reject(task);
         }
     }
-
+    // 添加任务到任务队列
     final boolean offerTask(Runnable task) {
         if (isShutdown()) {
             reject();

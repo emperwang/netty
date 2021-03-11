@@ -49,7 +49,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
 
     private static final InternalLogger logger =
             InternalLoggerFactory.getInstance(AbstractNioChannel.class);
-
+    // 记录对应的channel, server端是 serverSocketChannel, 客户端: SocketChannel
     private final SelectableChannel ch;
     protected final int readInterestOp;
     volatile SelectionKey selectionKey;
@@ -81,6 +81,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         // 也可以看到 javaChannel方法 返回的就是jdk底层创建的ServerSocketChannelImpl
         this.ch = ch;
         // 记录感兴趣的事件
+        // NioServerSocketChannel第一次创建时 使用的事件是 SelectionKey.OP_ACCEPT
         this.readInterestOp = readInterestOp;
         try {
             // 把创建的NioServerSocket设置为非阻塞
@@ -387,6 +388,7 @@ public abstract class AbstractNioChannel extends AbstractChannel {
         for (;;) {
             try {
                 // 注册动作
+                // 真正的 ServerSocketCHannel 或 SocketChannel 注册到 selector上的动作
                 selectionKey = javaChannel().register(eventLoop().unwrappedSelector(), 0, this);
                 return;
             } catch (CancelledKeyException e) {

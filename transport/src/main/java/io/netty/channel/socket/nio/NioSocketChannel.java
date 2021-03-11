@@ -384,7 +384,9 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
     @Override
     protected void doWrite(ChannelOutboundBuffer in) throws Exception {
         // 获取channel
+        // 这里即是 SocketChannel  java.nio
         SocketChannel ch = javaChannel();
+        // 获取写 自旋操作
         int writeSpinCount = config().getWriteSpinCount();
         do {
             if (in.isEmpty()) {
@@ -395,8 +397,11 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
             }
 
             // Ensure the pending writes are made of ByteBufs only.
+            // 最大可写的 byte数量
             int maxBytesPerGatheringWrite = ((NioSocketChannelConfig) config).getMaxBytesPerGatheringWrite();
+            // 这里是把 flushedEntry中的数组 转换为 ByteBuffer数组
             ByteBuffer[] nioBuffers = in.nioBuffers(1024, maxBytesPerGatheringWrite);
+            // 再获取到 buffer的数量
             int nioBufferCnt = in.nioBufferCount();
 
             // Always us nioBuffers() to workaround data-corruption.
@@ -405,16 +410,23 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                 case 0:
                     // We have something else beside ByteBuffers to write so fallback to normal writes.
                     // 真正写入操作
+                    // buffer数量为0 情况下的写入
                     writeSpinCount -= doWrite0(in);
                     break;
                 case 1: {
                     // Only one ByteBuf so use non-gathering write
                     // Zero length buffers are not added to nioBuffers by ChannelOutboundBuffer, so there is no need
                     // to check if the total size of all the buffers is non-zero.
+                    // buffer数量为1 情况下的写入
                     ByteBuffer buffer = nioBuffers[0];
                     int attemptedBytes = buffer.remaining();
                     final int localWrittenBytes = ch.write(buffer);
+                    // localWrittenBytes 表示写入到 channel中的byte 数量
+                    // 如果localWrittenBytes <=0, 说明已经tcp buffer已经满了
+                    // 那 tcp buf 满了,说明此是半包写入,并没有把完整的 数据写出
                     if (localWrittenBytes <= 0) {
+                        // 这里则 设置 OP_WRITE 标志位,等待下次继续写入
+                        // 半包写出的处理
                         incompleteWrite(true);
                         return;
                     }
@@ -427,8 +439,10 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                     // Zero length buffers are not added to nioBuffers by ChannelOutboundBuffer, so there is no need
                     // to check if the total size of all the buffers is non-zero.
                     // We limit the max amount to int above so cast is safe
+                    // buffer 数量比较多的情况下的写入
                     long attemptedBytes = in.nioBufferSize();
                     final long localWrittenBytes = ch.write(nioBuffers, 0, nioBufferCnt);
+                    // 这里同样是半包的写出处理
                     if (localWrittenBytes <= 0) {
                         incompleteWrite(true);
                         return;
@@ -441,6 +455,7 @@ public class NioSocketChannel extends AbstractNioByteChannel implements io.netty
                     break;
                 }
             }
+            // 这里使用 writeSpinCount限制了写出的操作次数, 避免长期占用资源
         } while (writeSpinCount > 0);
 
         incompleteWrite(writeSpinCount < 0);

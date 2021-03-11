@@ -112,6 +112,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
      * The NIO {@link Selector}.
      */
     private Selector selector;
+    // 记录此 NioEventLoop 对应的 selector
     private Selector unwrappedSelector;
     private SelectedSelectionKeySet selectedKeys;
 
@@ -139,9 +140,10 @@ public final class NioEventLoop extends SingleThreadEventLoop {
         super(parent, executor, false, newTaskQueue(queueFactory), newTaskQueue(queueFactory),
                 rejectedExecutionHandler);
         this.provider = ObjectUtil.checkNotNull(selectorProvider, "selectorProvider");
-        // 策略
+        // 选择group的策略
         this.selectStrategy = ObjectUtil.checkNotNull(strategy, "selectStrategy");
         // 每一个NioEventLoop对应一个selector
+        // openSelector 即 创建 selector的操作
         final SelectorTuple selectorTuple = openSelector();
         this.selector = selectorTuple.selector;
         this.unwrappedSelector = selectorTuple.unwrappedSelector;
@@ -150,6 +152,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
     private static Queue<Runnable> newTaskQueue(
             EventLoopTaskQueueFactory queueFactory) {
         if (queueFactory == null) {
+            // 使用要给默认等待的 task来创建 任务队列
             return newTaskQueue0(DEFAULT_MAX_PENDING_TASKS);
         }
         return queueFactory.newTaskQueue(DEFAULT_MAX_PENDING_TASKS);
@@ -169,7 +172,7 @@ public final class NioEventLoop extends SingleThreadEventLoop {
             this.selector = selector;
         }
     }
-
+    // 创建 selector
     private SelectorTuple openSelector() {
         final Selector unwrappedSelector;
         try {
