@@ -52,8 +52,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C extends Channel> implements Cloneable {
     @SuppressWarnings("unchecked")
+    // 用于option的的空数组
     static final Map.Entry<ChannelOption<?>, Object>[] EMPTY_OPTION_ARRAY = new Map.Entry[0];
     @SuppressWarnings("unchecked")
+    // 用于存储 attribute的空数组
     static final Map.Entry<AttributeKey<?>, Object>[] EMPTY_ATTRIBUTE_ARRAY = new Map.Entry[0];
     // boss group
     volatile EventLoopGroup group;
@@ -67,7 +69,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
     // options配置channel的一些配置
     private final Map<ChannelOption<?>, Object> options = new LinkedHashMap<ChannelOption<?>, Object>();
     private final Map<AttributeKey<?>, Object> attrs = new ConcurrentHashMap<AttributeKey<?>, Object>();
-    // 处理器
+    // server 端的处理器
     private volatile ChannelHandler handler;
 
     AbstractBootstrap() {
@@ -414,6 +416,7 @@ public abstract class AbstractBootstrap<B extends AbstractBootstrap<B, C>, C ext
 
     final Map.Entry<ChannelOption<?>, Object>[] newOptionsArray() {
         synchronized (options) {
+            // 把 option放入到数组中
             return options.entrySet().toArray(EMPTY_OPTION_ARRAY);
         }
     }

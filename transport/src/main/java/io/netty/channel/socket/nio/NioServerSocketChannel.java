@@ -66,7 +66,7 @@ public class NioServerSocketChannel extends AbstractNioMessageChannel
                     "Failed to open a server socket.", e);
         }
     }
-
+    // 记录server 端的 option操作
     private final ServerSocketChannelConfig config;
 
     /**
