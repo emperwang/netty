@@ -75,9 +75,11 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
             throw new IllegalArgumentException(String.format(
                     "initialCapacity(%d) > maxCapacity(%d)", initialArray.length, maxCapacity));
         }
-
+        // 内存分配器
         this.alloc = alloc;
+        // 设置 byte[] 数组
         setArray(initialArray);
+        // 初始化 readIndex 和 writeIndex值
         setIndex(0, initialArray.length);
     }
 
@@ -213,10 +215,13 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         ensureAccessible();
         ByteBuffer tmpBuf;
         if (internal) {
+            // 这里相当于是把内部的 ByteBuf转换为了 byteBuffer
             tmpBuf = internalNioBuffer();
         } else {
             tmpBuf = ByteBuffer.wrap(array);
         }
+        // 写出操作
+        //**********************************
         return out.write((ByteBuffer) tmpBuf.clear().position(index).limit(index + length));
     }
 
@@ -274,11 +279,12 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         ensureAccessible();
         return in.read(array, index, length);
     }
-
+    // 从channel中读取数据 并放入到 buffer中; 返回读取的byte 个数
     @Override
     public int setBytes(int index, ScatteringByteChannel in, int length) throws IOException {
         ensureAccessible();
         try {
+            // 从channel中读取数据到 buffer中
             return in.read((ByteBuffer) internalNioBuffer().clear().position(index).limit(index + length));
         } catch (ClosedChannelException ignored) {
             return -1;
@@ -310,7 +316,7 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
     public ByteBuffer[] nioBuffers(int index, int length) {
         return new ByteBuffer[] { nioBuffer(index, length) };
     }
-
+    // 这里即是把 ByteBuf 对象转换为 jdk中的 byteBuffer
     @Override
     public ByteBuffer internalNioBuffer(int index, int length) {
         checkIndex(index, length);
@@ -534,7 +540,8 @@ public class UnpooledHeapByteBuf extends AbstractReferenceCountedByteBuf {
         checkIndex(index, length);
         return alloc().heapBuffer(length, maxCapacity()).writeBytes(array, index, length);
     }
-
+    // 获取一个 byteBuffer 相当于是阿布 byteBuf做转换
+    // 或者 把内置 数组转换为 ByteBuffer
     private ByteBuffer internalNioBuffer() {
         ByteBuffer tmpNioBuf = this.tmpNioBuf;
         if (tmpNioBuf == null) {

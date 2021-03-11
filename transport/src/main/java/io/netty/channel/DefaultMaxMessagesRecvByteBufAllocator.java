@@ -110,7 +110,7 @@ public abstract class DefaultMaxMessagesRecvByteBufAllocator implements MaxMessa
         @Override
         public void reset(ChannelConfig config) {
             this.config = config;
-            // 每次读取的对打byte数
+            // 每次读取的最大byte数
             maxMessagePerRead = maxMessagesPerRead();
             // 总消息数和 总的读取的byte数
             totalMessages = totalBytesRead = 0;

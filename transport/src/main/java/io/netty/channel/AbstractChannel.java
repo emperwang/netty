@@ -916,6 +916,7 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                  *  3. 不是上述两种类型则报错
                  */
                 msg = filterOutboundMessage(msg);
+                // 得到估算msg size的handler,来估算 msg的size
                 size = pipeline.estimatorHandle().size(msg);
                 if (size < 0) {
                     size = 0;
@@ -940,8 +941,10 @@ public abstract class AbstractChannel extends DefaultAttributeMap implements Cha
                 return;
             }
             // 先对缓存msg的链表进行一些update,以备下面的flush
+            // 简单说 就是把 unflushedEntry中的数据 连接到 flushedEntry中
             outboundBuffer.addFlush();
             // flush
+            // 进行写出操作
             flush0();
         }
 

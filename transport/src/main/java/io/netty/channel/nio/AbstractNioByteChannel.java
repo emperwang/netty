@@ -241,9 +241,10 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             // Directly return here so incompleteWrite(...) is not called.
             return 0;
         }
+        // 写操作
         return doWriteInternal(in, in.current());
     }
-
+    // 内部写入操作
     private int doWriteInternal(ChannelOutboundBuffer in, Object msg) throws Exception {
         if (msg instanceof ByteBuf) {
             ByteBuf buf = (ByteBuf) msg;
@@ -255,6 +256,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             // 写入 并返回写入的字节数
             final int localFlushedAmount = doWriteBytes(buf);
             if (localFlushedAmount > 0) {
+                // 更新一下处理进度
                 in.progress(localFlushedAmount);
                 if (!buf.isReadable()) {
                     // 1. 判断msg是否write完,完了则把flushedEntry unflushEntry tailEntry置为null
@@ -270,8 +272,10 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
                 return 0;
             }
             // 调用jdk来进行文件的写入
+            // 使用 file.transferTo zero-copy 进行文件的写出
             long localFlushedAmount = doWriteFileRegion(region);
             if (localFlushedAmount > 0) {
+                // 更新一下处理进度
                 in.progress(localFlushedAmount);
                 if (region.transferred() >= region.count()) {
                     in.remove();
@@ -307,7 +311,9 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
         // 2. 自旋小于0, 很有可能msg没有写完, 则清除当前的channel的write事件, 并提交一个任务,后续继续提交
         incompleteWrite(writeSpinCount < 0);
     }
-
+    /*
+         对写出的 msg类型 进行了一些过滤
+     */
     @Override
     protected final Object filterOutboundMessage(Object msg) {
         // 1. 把byteBuf 封装为 directBuf
@@ -330,7 +336,8 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
 
     protected final void incompleteWrite(boolean setOpWrite) {
         // Did not write completely.
-        // 没有写入完成
+        // 没有写出完成
+        // 半包写出
         if (setOpWrite) {
             // 设置channel的write事件
             setOpWrite();
@@ -340,10 +347,13 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             // writable (as far as we know). We will find out next time we attempt to write if the socket is writable
             // and set the write OP if necessary.
             // 清除此channel的selector的write事件
+            // 如果 需要要设置 write 事件,则说明 完全写入了
+            // 这里就清除 此channel对应的 OP_WRITE 事件
             clearOpWrite();
 
             // Schedule flush again later so other tasks can be picked up in the meantime
             // 提交一个任务, 在后面继续进行写入操作
+            // 此 flushTask 会把刚写入到 outputBuffer中的数据 真实写入到 channel中,即真正的写出动作
             eventLoop().execute(flushTask);
         }
     }
@@ -367,7 +377,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
      * @return amount       the amount of written bytes
      */
     protected abstract int doWriteBytes(ByteBuf buf) throws Exception;
-
+    // 设置 nio的 OP_WRITE 事件
     protected final void setOpWrite() {
         final SelectionKey key = selectionKey();
         // Check first if the key is still valid as it may be canceled as part of the deregistration
@@ -376,12 +386,13 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
         if (!key.isValid()) {
             return;
         }
+        // 设置 OP_WRITE 事件
         final int interestOps = key.interestOps();
         if ((interestOps & SelectionKey.OP_WRITE) == 0) {
             key.interestOps(interestOps | SelectionKey.OP_WRITE);
         }
     }
-
+    // 清除写标志
     protected final void clearOpWrite() {
         final SelectionKey key = selectionKey();
         // Check first if the key is still valid as it may be canceled as part of the deregistration
@@ -391,6 +402,7 @@ public abstract class AbstractNioByteChannel extends AbstractNioChannel {
             return;
         }
         final int interestOps = key.interestOps();
+        // 如果有 写标志  那么就清除此标志位
         if ((interestOps & SelectionKey.OP_WRITE) != 0) {
             key.interestOps(interestOps & ~SelectionKey.OP_WRITE);
         }

@@ -44,8 +44,9 @@ import static io.netty.util.internal.ObjectUtil.checkPositiveOrZero;
  * The default {@link ChannelConfig} implementation.
  */
 public class DefaultChannelConfig implements ChannelConfig {
+    // 计算 msg size的handler
     private static final MessageSizeEstimator DEFAULT_MSG_SIZE_ESTIMATOR = DefaultMessageSizeEstimator.DEFAULT;
-
+    // 默认连接超时时间
     private static final int DEFAULT_CONNECT_TIMEOUT = 30000;
 
     private static final AtomicIntegerFieldUpdater<DefaultChannelConfig> AUTOREAD_UPDATER =
@@ -59,13 +60,16 @@ public class DefaultChannelConfig implements ChannelConfig {
     private volatile ByteBufAllocator allocator = ByteBufAllocator.DEFAULT;
     // 接收内存 的分配器
     private volatile RecvByteBufAllocator rcvBufAllocator;
+    // 计算msg size 的handler
     private volatile MessageSizeEstimator msgSizeEstimator = DEFAULT_MSG_SIZE_ESTIMATOR;
-
+    // 连接超时 时间
     private volatile int connectTimeoutMillis = DEFAULT_CONNECT_TIMEOUT;
+    // 写操作的 spain此处, 必须持续占有资源,阻塞其他操作
     private volatile int writeSpinCount = 16;
     @SuppressWarnings("FieldMayBeFinal")
     private volatile int autoRead = 1;
     private volatile boolean autoClose = true;
+    // 写buffer的阈值
     private volatile WriteBufferWaterMark writeBufferWaterMark = WriteBufferWaterMark.DEFAULT;
     private volatile boolean pinEventExecutor = true;
 
@@ -250,7 +254,7 @@ public class DefaultChannelConfig implements ChannelConfig {
                     "MaxMessagesRecvByteBufAllocator", e);
         }
     }
-
+    // 获取 写自选
     @Override
     public int getWriteSpinCount() {
         return writeSpinCount;
@@ -342,7 +346,7 @@ public class DefaultChannelConfig implements ChannelConfig {
         this.autoClose = autoClose;
         return this;
     }
-
+    // 得到写 buffer的高阈值
     @Override
     public int getWriteBufferHighWaterMark() {
         return writeBufferWaterMark.high();

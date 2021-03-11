@@ -105,10 +105,11 @@ public class DefaultChannelPipeline implements ChannelPipeline {
         head.next = tail;
         tail.prev = head;
     }
-
+    // 得到估算 msg size的handler
     final MessageSizeEstimator.Handle estimatorHandle() {
         MessageSizeEstimator.Handle handle = estimatorHandle;
         if (handle == null) {
+            // 获取计算msg size的handler: DefaultMessageSizeEstimator
             handle = channel.config().getMessageSizeEstimator().newHandle();
             if (!ESTIMATOR.compareAndSet(this, null, handle)) {
                 handle = estimatorHandle;

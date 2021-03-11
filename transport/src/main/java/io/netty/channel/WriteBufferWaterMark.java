@@ -34,11 +34,12 @@ public final class WriteBufferWaterMark {
 
     private static final int DEFAULT_LOW_WATER_MARK = 32 * 1024;
     private static final int DEFAULT_HIGH_WATER_MARK = 64 * 1024;
-
+    // 默认的一些数据写出的 阈值
     public static final WriteBufferWaterMark DEFAULT =
             new WriteBufferWaterMark(DEFAULT_LOW_WATER_MARK, DEFAULT_HIGH_WATER_MARK, false);
-
+    // 低 阈值
     private final int low;
+    // 高 阈值
     private final int high;
 
     /**

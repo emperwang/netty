@@ -95,7 +95,7 @@ public final class ChannelOutboundBuffer {
 
     private static final AtomicLongFieldUpdater<ChannelOutboundBuffer> TOTAL_PENDING_SIZE_UPDATER =
             AtomicLongFieldUpdater.newUpdater(ChannelOutboundBuffer.class, "totalPendingSize");
-
+    // 记录等待 写出的字节总数
     @SuppressWarnings("UnusedDeclaration")
     private volatile long totalPendingSize;
 
@@ -116,6 +116,8 @@ public final class ChannelOutboundBuffer {
      * the message was written.
      */
     public void addMessage(Object msg, int size, ChannelPromise promise) {
+        // total 得到msg的长度
+        // 这里其实对 Entry使用了 pool 管理
         Entry entry = Entry.newInstance(msg, size, total(msg), promise);
         // 1. 如果是第一次添加,则tailEntry   flushEntry初始化为 null
         if (tailEntry == null) {
@@ -135,7 +137,8 @@ public final class ChannelOutboundBuffer {
 
         // increment pending bytes after adding message to the unflushed arrays.
         // See https://github.com/netty/netty/issues/1619
-        // 记录要flush的消息的个数
+        // 记录要flush的消息的 byte 长度
+        // 如果size 大于 高水位, 则不可写,
         incrementPendingOutboundBytes(entry.pendingSize, false);
     }
 
@@ -143,6 +146,7 @@ public final class ChannelOutboundBuffer {
      * Add a flush to this {@link ChannelOutboundBuffer}. This means all previous added messages are marked as flushed
      * and so you will be able to handle them.
      */
+    // 即把之前写入的数据 放入到待flush的 链表,等待进行flush操作
     public void addFlush() {
         // There is no need to process all entries if there was already a flush before and no new messages
         // where added in the meantime.
@@ -156,10 +160,13 @@ public final class ChannelOutboundBuffer {
                 // there is no flushedEntry yet, so start with the entry
                 flushedEntry = entry;
             }
+            // 这里简单说 就是把 unflushedEntry中的entry 连接到了  flushedEntry
             do {
+                // 记录待flush的 entry 数量
                 flushed ++;
                 if (!entry.promise.setUncancellable()) {
                     // Was cancelled so make sure we free up memory and notify about the freed bytes
+                    // 如果节点被取消了, 则释放对应的 entry节点, 并减少 等待发送 byte数量
                     int pending = entry.cancel();
                     decrementPendingOutboundBytes(pending, false, true);
                 }
@@ -186,6 +193,7 @@ public final class ChannelOutboundBuffer {
         }
         // 等待flush的msg的个数更新
         long newWriteBufferSize = TOTAL_PENDING_SIZE_UPDATER.addAndGet(this, size);
+        // 如果待写的 byte数量 大于 writeBuffer的高阈值, 则设置不可写
         if (newWriteBufferSize > channel.config().getWriteBufferHighWaterMark()) {
             setUnwritable(invokeLater);
         }
@@ -209,7 +217,7 @@ public final class ChannelOutboundBuffer {
             setWritable(invokeLater);
         }
     }
-
+    // 得到msg中 byte的长度
     private static long total(Object msg) {
         if (msg instanceof ByteBuf) {
             return ((ByteBuf) msg).readableBytes();
@@ -415,18 +423,26 @@ public final class ChannelOutboundBuffer {
      *                 value maybe exceeded because we make a best effort to include at least 1 {@link ByteBuffer}
      *                 in the return value to ensure write progress is made.
      */
+    // 相当于是把 flushedEntry中的数组 转换为 ByteBuffer并 放入到一个 数组中 返回
     public ByteBuffer[] nioBuffers(int maxCount, long maxBytes) {
         assert maxCount > 0;
         assert maxBytes > 0;
         long nioBufferSize = 0;
         int nioBufferCount = 0;
         final InternalThreadLocalMap threadLocalMap = InternalThreadLocalMap.get();
+        // 获取到 当前线程 threadLocalMap对应的缓存
+        // 如果没有就创建一个 默认大小1024个 byteBuffer
         ByteBuffer[] nioBuffers = NIO_BUFFERS.get(threadLocalMap);
+        // 从flushedEntry 链表中获取数据
         Entry entry = flushedEntry;
         while (isFlushedEntry(entry) && entry.msg instanceof ByteBuf) {
+            // 如果没有取消
             if (!entry.cancelled) {
+                // 得到entry对应的 msg
                 ByteBuf buf = (ByteBuf) entry.msg;
+                // readIndex
                 final int readerIndex = buf.readerIndex();
+                // 可读的msg的长度, 即msg数量
                 final int readableBytes = buf.writerIndex() - readerIndex;
 
                 if (readableBytes > 0) {
@@ -444,14 +460,19 @@ public final class ChannelOutboundBuffer {
                         // - http://linux.die.net/man/2/writev
                         break;
                     }
+                    // 记录要写出的byte的数量
                     nioBufferSize += readableBytes;
                     int count = entry.count;
                     if (count == -1) {
                         //noinspection ConstantValueVariableUse
+                        // 直接获取  byteBuf中的 count数量
                         entry.count = count = buf.nioBufferCount();
                     }
+                    // 确定一下 当前需要的最小的 buffer数量
                     int neededSpace = min(maxCount, nioBufferCount + count);
+                    // 如果最下的buffer, 大于 nioBuffers(记录要返回的数据)
                     if (neededSpace > nioBuffers.length) {
+                        // 对nioBuffers 进行一下 扩容操作
                         nioBuffers = expandNioBufferArray(nioBuffers, neededSpace, nioBufferCount);
                         NIO_BUFFERS.set(threadLocalMap, nioBuffers);
                     }
@@ -460,12 +481,15 @@ public final class ChannelOutboundBuffer {
                         if (nioBuf == null) {
                             // cache ByteBuffer as it may need to create a new ByteBuffer instance if its a
                             // derived buffer
+                            // 这里即是把 byteBuf转换为 byteBuffer
                             entry.buf = nioBuf = buf.internalNioBuffer(readerIndex, readableBytes);
                         }
+                        // 把转换后的 buffer 放入到数组中  用于后面返回
                         nioBuffers[nioBufferCount++] = nioBuf;
                     } else {
                         // The code exists in an extra method to ensure the method is not too big to inline as this
                         // branch is not very likely to get hit very frequently.
+                        // 如果是 entry中的数据 是一个 buf数组, 则进行这里的处理
                         nioBufferCount = nioBuffers(entry, buf, nioBuffers, nioBufferCount, maxCount);
                     }
                     if (nioBufferCount >= maxCount) {
@@ -473,9 +497,12 @@ public final class ChannelOutboundBuffer {
                     }
                 }
             }
+            // 得到下一个  entry
             entry = entry.next;
         }
+        // buffer的数量
         this.nioBufferCount = nioBufferCount;
+        // buffer的大小
         this.nioBufferSize = nioBufferSize;
 
         return nioBuffers;
@@ -613,7 +640,7 @@ public final class ChannelOutboundBuffer {
             }
         }
     }
-
+    // 更新不可写  的字段
     private void setUnwritable(boolean invokeLater) {
         for (;;) {
             final int oldValue = unwritable;
@@ -626,7 +653,7 @@ public final class ChannelOutboundBuffer {
             }
         }
     }
-
+    // 发布 可写状态的 改变事件
     private void fireChannelWritabilityChanged(boolean invokeLater) {
         final ChannelPipeline pipeline = channel.pipeline();
         if (invokeLater) {
@@ -838,6 +865,7 @@ public final class ChannelOutboundBuffer {
         }
 
         static Entry newInstance(Object msg, int size, long total, ChannelPromise promise) {
+            // 创建一个 Entry
             Entry entry = RECYCLER.get();
             entry.msg = msg;
             entry.pendingSize = size + CHANNEL_OUTBOUND_BUFFER_ENTRY_OVERHEAD;
